@@ -6,4 +6,4 @@ This repository contains cross-language benchmark suites comparing daslang again
 
 ## Related
 
-- [daScript](https://github.com/GaijinEntertainment/daScript) — the daslang compiler and runtime
+- [daslang](https://github.com/GaijinEntertainment/daScript) — the daslang compiler and runtime
