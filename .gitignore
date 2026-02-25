@@ -21,6 +21,7 @@
 *.so
 *.dylib
 *.dll
+!tests/**/*.dll
 
 # Fortran module files
 *.mod
@@ -36,6 +37,7 @@
 *.exe
 *.out
 *.app
+!tests/**/*.exe
 
 # debug information files
 *.dwo
