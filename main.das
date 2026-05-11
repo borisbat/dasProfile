@@ -120,23 +120,79 @@ def run_dir(appDir : string) {
     }
 }
 
-def get_cpu_name {
-    var cpuName = ""
+def extract_cpu_value(line : string) {
+    let p = line |> find(":")
+    if (p == -1) {
+        return line |> trim()
+    }
+    return (line |> slice(p + 1)) |> trim()
+}
+
+def first_nonempty_command_line(cmd : string) {
+    var result = ""
     unsafe {
-        popen("wmic cpu get name") <| $(f) {
-            var prevName = false
+        popen(cmd) <| $(f) {
             while (!feof(f)) {
-                let st = fgets(f)
-                if (st |> find("Name") != -1) {
-                    prevName = true
-                } elif (prevName) {
-                    cpuName = st |> trim()
-                    prevName = false
+                let st = (fgets(f)) |> trim()
+                if (!empty(st)) {
+                    result = st
+                    break
                 }
             }
         }
     }
-    return cpuName
+    return result
+}
+
+def get_cpu_name {
+    let platform = get_platform_name()
+    if (platform == "osx") {
+        return first_nonempty_command_line("sysctl -n machdep.cpu.brand_string 2>/dev/null")
+    } elif (platform == "linux") {
+        var cpuName : string
+        unsafe {
+            popen("lscpu 2>/dev/null") <| $(f) {
+                while (!feof(f)) {
+                    let st = fgets(f)
+                    if (st |> find("Model name:") != -1) {
+                        cpuName = extract_cpu_value(st)
+                        break
+                    }
+                }
+            }
+        }
+        if (!empty(cpuName)) return cpuName
+        unsafe {
+            popen("cat /proc/cpuinfo 2>/dev/null") <| $(f) {
+                while (!feof(f)) {
+                    let st = fgets(f)
+                    if (st |> find("model name") != -1) {
+                        cpuName = extract_cpu_value(st)
+                        break
+                    }
+                }
+            }
+        }
+        return cpuName
+    } elif (platform == "windows") {
+        var cpuName : string
+        unsafe {
+            popen("wmic cpu get name") <| $(f) {
+                var prevName = false
+                while (!feof(f)) {
+                    let st = fgets(f)
+                    if (st |> find("Name") != -1) {
+                        prevName = true
+                    } elif (prevName) {
+                        cpuName = st |> trim()
+                        break
+                    }
+                }
+            }
+        }
+        return cpuName
+    }
+    return platform
 }
 
 struct ProfileEntry {
