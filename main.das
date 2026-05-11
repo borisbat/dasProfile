@@ -1,4 +1,5 @@
 options gen2
+require daslib/clargs
 require daslib/strings_boost
 require peg/peg
 require daslib/fio
@@ -17,6 +18,29 @@ var ENABLE_INTERPRETER = true
 
 
 var failed = 0
+
+[CommandLineArgs]
+struct ProfileArgs {
+    @clarg_doc = "Run /examples/profile/tests/<name>.das and exit"
+    test : string
+
+    @clarg_doc = "Generate HTML output"
+    html : bool
+
+    @clarg_doc = "Log compilation time"
+    log : bool
+
+    @clarg_doc = "Disable main tests"
+    nomain : bool
+
+    @clarg_doc = "Reserved legacy flag (currently no-op)"
+    hash : bool
+
+    @clarg_short = "?"
+    @clarg_name = "show-help"
+    @clarg_doc = "Show this help and exit"
+    help : bool
+}
 
 def compile_and_run(fileName : string; useAot : bool; useJit : bool) {
     var t0 = ref_time_ticks()
@@ -252,36 +276,33 @@ def make_html {
 
 [export]
 def main {
+    var parsed <- parse_args(type<ProfileArgs>)
+    if (parsed |> is_err) {
+        print("error: {parsed |> unwrap_err}\n\n")
+        print_help(get_command_info(type<ProfileArgs>), "profile_tests")
+        return
+    }
+
+    var args <- parsed |> move_unwrap
+    if (args.help) {
+        print_help(get_command_info(type<ProfileArgs>), "profile_tests")
+        return
+    }
+
     var cpuName = get_cpu_name()
     print("Testing on {cpuName} at {get_clock()}\n")
-    var singleTest = ""
-    var mainTests = true
+    let singleTest = args.test
+    let mainTests = !args.nomain
     print("{get_command_line_arguments()}\n")
-    let nArgs = get_command_line_arguments() |> length()
-    var i = 0
-    while (i < nArgs) {
-        let arg = get_command_line_arguments()[i]
-        if (arg == "-test" && i < nArgs - 1) {
-            singleTest = get_command_line_arguments()[i + 1]
-            i += 2
-            continue
-        } elif (arg == "-html") {
-            make_html()
-            return
-        } elif (arg == "-log") {
-            LOG_TEST_COMPILATION_TIME = true
-        } elif (arg == "-nomain") {
-            mainTests = false
-        } elif (arg == "-help") {
-            print("Usage: profile_tests [-test <testname>] [-log] [-hash]\n")
-            print("  -test testname  runs /examples/profile/tests/test.das and exits immediately\n")
-            print("  -log            logs compilation time\n")
-            print("  -hash           runs hash tests\n")
-            print("  -nomain         disables main tests\n")
-            return
-        }
-        i += 1
+
+    if (args.html) {
+        make_html()
+        return
     }
+    if (args.log) {
+        LOG_TEST_COMPILATION_TIME = true
+    }
+
     if (!empty(singleTest)) {
         let appfile = "{get_das_root()}/examples/profile/tests/{singleTest}.das"
         test_single_file(appfile)
