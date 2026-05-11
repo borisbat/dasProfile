@@ -93,7 +93,7 @@ def test_single_file(fileName : string) {
         print("\"DAS AOT\", ")
         compile_and_run(fileName, true, false)
     }
-    if (ENABLE_JIT) {
+    if (ENABLE_JIT && jit_enabled()) {
         print("\"DAS JIT\", ")
         compile_and_run(fileName, false, true)
     }
