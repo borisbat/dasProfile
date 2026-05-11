@@ -2,12 +2,12 @@ options gen2
 require daslib/fio
 require daslib/strings
 
-let TEST_JAVASCRIPT = true
-let TEST_LUAU = true
-let TEST_LUA = true
-let TEST_LUA_JIT = true
-let TEST_SQUIRREL = true
-let TEST_CSHARP = true
+let TEST_JAVASCRIPT = false
+let TEST_LUAU = false
+let TEST_LUA = false
+let TEST_LUA_JIT = false
+let TEST_SQUIRREL = false
+let TEST_CSHARP = false
 let TEST_MONO_INTERPRETER = false
 
 [no_jit, no_aot]

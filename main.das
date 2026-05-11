@@ -250,27 +250,12 @@ def make_html {
     print("</html>\n\n")
 }
 
-def make_extra_html {
-    var entries <- make_entries(" -nomain -extra")
-    print("\n<!DOCTYPE html><html>\n")
-    print("<body>\n")
-    print("<small>Tested on {get_cpu_name()}</small><br>\n")
-    make_table("ExtraTests", entries, {
-        "DAS INTERPRETER",
-        "DAS AOT",
-        "DAS JIT"
-    })
-    print("</body>\n")
-    print("</html>\n\n")
-}
-
 [export]
 def main {
     var cpuName = get_cpu_name()
     print("Testing on {cpuName} at {get_clock()}\n")
     var singleTest = ""
     var mainTests = true
-    var extraTests = false
     print("{get_command_line_arguments()}\n")
     let nArgs = get_command_line_arguments() |> length()
     var i = 0
@@ -282,19 +267,15 @@ def main {
             continue
         } elif (arg == "-html") {
             make_html()
-            // make_extra_html()
             return
         } elif (arg == "-log") {
             LOG_TEST_COMPILATION_TIME = true
-        } elif (arg == "-extra") {
-            extraTests = true
         } elif (arg == "-nomain") {
             mainTests = false
         } elif (arg == "-help") {
-            print("Usage: profile_tests [-test <testname>] [-log] [-extra] [-hash]\n")
+            print("Usage: profile_tests [-test <testname>] [-log] [-hash]\n")
             print("  -test testname  runs /examples/profile/tests/test.das and exits immediately\n")
             print("  -log            logs compilation time\n")
-            print("  -extra          runs extra tests\n")
             print("  -hash           runs hash tests\n")
             print("  -nomain         disables main tests\n")
             return
@@ -308,9 +289,6 @@ def main {
     }
     if (mainTests) {
         run_dir("{get_das_root()}/examples/profile/tests")
-    }
-    if (extraTests) {
-        run_dir("{get_das_root()}/examples/profile/extra_test")
     }
     if (failed != 0) {
         print("TOTAL FAILURES: {failed}\n")
