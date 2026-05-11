@@ -120,6 +120,21 @@ def run_dir(appDir : string) {
     }
 }
 
+def has_tests(appDir : string) {
+    var found = false
+    dir(appDir) <| $(fileName) {
+        if ((!fileName |> starts_with("_")) && fileName |> ends_with(".das")) {
+            found = true
+        }
+    }
+    return found
+}
+
+def tests_dir {
+    let local = "{getcwd()}/tests"
+    return has_tests(local) ? local : "{get_das_root()}/examples/profile/tests"
+}
+
 def extract_cpu_value(line : string) {
     let p = line |> find(":")
     if (p == -1) {
@@ -360,12 +375,12 @@ def main {
     }
 
     if (!empty(singleTest)) {
-        let appfile = "{get_das_root()}/examples/profile/tests/{singleTest}.das"
-        test_single_file(appfile)
+        let dir = tests_dir()
+        test_single_file("{dir}/{singleTest}.das")
         return
     }
     if (mainTests) {
-        run_dir("{get_das_root()}/examples/profile/tests")
+        run_dir(tests_dir())
     }
     if (failed != 0) {
         print("TOTAL FAILURES: {failed}\n")
