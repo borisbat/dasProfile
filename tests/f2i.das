@@ -23,7 +23,7 @@ def mk_float(i) {
     return float(i) + float(i) / float(TOTAL_NUMBERS)
 }
 
-[export, no_jit, no_aot]
+[export, no_aot]
 def main {
     var nums : array<string> <- [for (i in range(TOTAL_NUMBERS)); string(mk_float(i))]
     // reference summ

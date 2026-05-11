@@ -108,7 +108,7 @@ def sha256(msg : array<uint8>) {
     return toHex(hash)
 }
 
-[export, no_jit, no_aot]
+[export, no_aot]
 def main {
     let input <- [for (i in range(1024)); uint8('.')]
     let dt = profile(20, "sha256") <| $() {

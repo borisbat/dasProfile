@@ -39,7 +39,7 @@ def test() {
     assert(solutions == 92)
 }
 
-[export, no_jit, no_aot]
+[export, no_aot]
 def main {
     profile(20, "queen")  <| $() {
         test()

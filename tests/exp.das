@@ -22,7 +22,7 @@ def verifyExp(f) {
     assert(q < eps)
 }
 
-[export, no_jit, no_aot]
+[export, no_aot]
 def main {
     var f1 = 0.
     profile(20, "exp loop") <| $() {

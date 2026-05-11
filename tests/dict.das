@@ -28,7 +28,7 @@ def dict(var tab : table<string; int>; src : array<string>) {
     return maxOcc
 }
 
-[export, no_jit, no_aot]
+[export, no_aot]
 def main {
     var tab : table<string; int>
     var src : array<string>

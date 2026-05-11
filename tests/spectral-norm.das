@@ -65,7 +65,7 @@ def test {
     return sqrt(vBv / vv)
 }
 
-[export, no_jit, no_aot]
+[export, no_aot]
 def main {
     let ref = 1.274224153lf
     var f1 : double

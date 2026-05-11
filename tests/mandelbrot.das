@@ -40,7 +40,7 @@ def test {
 }
 
 
-[export, no_jit, no_aot]
+[export, no_aot]
 def main {
     profile(20, "mandelbrot") <| $() {
         test()
