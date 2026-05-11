@@ -4,7 +4,7 @@ options gen2
 options solid_context
 
 require math
-require strings
+require daslib/strings
 
 include ../config.das
 

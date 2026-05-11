@@ -1,6 +1,6 @@
 options gen2
-require fio
-require strings
+require daslib/fio
+require daslib/strings
 
 let TEST_JAVASCRIPT = true
 let TEST_LUAU = true

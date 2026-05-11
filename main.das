@@ -1,9 +1,9 @@
 options gen2
 require daslib/strings_boost
 require peg/peg
-require fio
-require rtti
-require debugapi
+require daslib/fio
+require daslib/rtti
+require daslib/debugapi
 require math
 
 options unsafe_table_lookup = false
@@ -27,7 +27,6 @@ def compile_and_run(fileName : string; useAot : bool; useJit : bool) {
             cop.threadlock_context = true
             if (useJit) {
                 cop.jit_enabled = jit_enabled()
-                cop.jit_module := "{get_das_root()}/daslib/just_in_time.das"
             } elif (useAot) {
                 cop.aot = true
             } else {
@@ -147,9 +146,9 @@ def make_table(tablename : string; entries : array<ProfileEntry>; languages : ta
         if (languages |> key_exists(e.language)) {
             if (categories |> key_exists(e.category)) {
                 let (tmin, tmax) = categories[e.category]
-                categories[e.category] = (min(e.time, tmin), max(e.time, tmax))
+                categories[e.category] = (min = min(e.time, tmin), max = max(e.time, tmax))
             } else {
-                categories[e.category] = (e.time, e.time)
+                categories[e.category] = (min = e.time, max = e.time)
             }
         }
     }
