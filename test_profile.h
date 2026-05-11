@@ -57,6 +57,7 @@ DAS_MOD_API void testTryCatch(das::Context * context, das::LineInfoArg * at);
 DAS_MOD_API int testTree();
 DAS_MOD_API uint32_t testMaxFrom1s(uint32_t x);
 DAS_MOD_API void testTableSort ( das::TArray<int32_t> & tab );
+DAS_MOD_API char * testSha256(const das::TArray<uint8_t> & msg, das::Context * ctx);
 
 DAS_MOD_API void testManagedInt(const das::TBlock<void, const das::vector<int32_t>> & blk, das::Context * context, das::LineInfoArg * at);
 

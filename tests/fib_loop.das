@@ -6,7 +6,7 @@ require testProfile
 include ../config.das
 
 [sideeffects]
-def fibI(n) {
+def fibI(n:int) {
     var last = 1
     var cur = 0
     for (i in range(n)) {

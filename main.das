@@ -6,13 +6,14 @@ require daslib/fio
 require daslib/rtti
 require daslib/debugapi
 require math
+require ./log_filter.das
 
 options unsafe_table_lookup = false
 
 var HTML_TEST_MODE = false
 
 var LOG_TEST_COMPILATION_TIME = false
-var ENABLE_AOT = false
+var ENABLE_AOT = true
 var ENABLE_JIT = true
 var ENABLE_INTERPRETER = true
 
@@ -50,9 +51,12 @@ def compile_and_run(fileName : string; useAot : bool; useJit : bool) {
             cop.threadlock_context = true
             if (useJit) {
                 cop.jit_enabled = jit_enabled()
+                if (jit_enabled()) {
+                    access |> add_extra_module("just_in_time", "{get_das_root()}/daslib/just_in_time.das")
+                }
             } elif (useAot) {
-                cop.aot_module = true
                 cop.aot = true
+                cop.fail_on_no_aot = true
             } else {
                 cop.jit_enabled = false
                 cop.aot = false
@@ -347,6 +351,8 @@ def make_html {
 
 [export]
 def main {
+    install_log_filter()
+
     var parsed <- parse_args(type<ProfileArgs>)
     if (parsed |> is_err) {
         print("error: {parsed |> unwrap_err}\n\n")
