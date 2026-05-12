@@ -10,11 +10,10 @@ class HelloWorld {
     static void profile ( int count, string category, MyBlock f ) {
         double minT = 1e+06;
         for ( int i = 0; i < count; i++ ) {
-            DateTime start = DateTime.Now;
+            Stopwatch stopwatch = Stopwatch.StartNew();
             f();
-            DateTime end = DateTime.Now;
-            TimeSpan elapsed = end - start;
-            double dt = ((double)elapsed.TotalMilliseconds) / 1000.0;
+            stopwatch.Stop();
+            double dt = stopwatch.Elapsed.TotalSeconds;
             minT = Math.Min(minT, dt);
         }
         Console.WriteLine($"\"{category}\", {minT}, {count}");
@@ -30,7 +29,7 @@ class HelloWorld {
     }
 
     static void Main() {
-        profile(20, "fibonacci recursive", () => {
+        profile(10, "fibonacci recursive", () => {
             int fi = FibR(31);
             Debug.Assert( fi==1346269, "The result is incorrect.");
         });

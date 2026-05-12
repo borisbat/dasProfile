@@ -40,4 +40,4 @@ try {
     throw "no loadfile"
 } catch(e) profile_it = require("profile.nut")
 
-print("\"queen\", " + profile_it(20, test) + ", 20\n");
+print("\"queen\", " + profile_it(10, test) + ", 10\n");

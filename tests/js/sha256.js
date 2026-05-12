@@ -17,6 +17,8 @@ const primes = [
   0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
 ];
 
+const PROFILE_RUNS = 10;
+
 function rrotate(value, bits) {
   return ((value >>> bits) | (value << (32 - bits))) >>> 0;
 }
@@ -92,7 +94,7 @@ function timeStamp() {
 
 function profile(tname, cnt, testFn) {
   let t = 100500;
-  let count = cnt;
+  let count = PROFILE_RUNS;
   while (count > 0) {
     const t0 = timeStamp();
     testFn();
@@ -102,13 +104,13 @@ function profile(tname, cnt, testFn) {
     count--;
   }
   t /= 1000.0;
-  print('"' + tname + '", ' + t + ', ' + cnt);
+  print('"' + tname + '", ' + t + ', ' + PROFILE_RUNS);
 }
 
 const input = new Array(1024).fill('.'.charCodeAt(0));
 let result = '';
 const ts0 = Date.now() / 1000.0;
-profile('sha256', 20, function () {
+profile('sha256', PROFILE_RUNS, function () {
   for (let i = 0; i < 1024; ++i) {
     result = sha256(input);
   }
@@ -118,5 +120,5 @@ const ts1 = Date.now() / 1000.0;
 if (sha256(input) !== '8adcaee60bb05a9964a1df12d2f007adcb8f3fa20ff7d1ecfde0a2ac301ff412') {
   print('sha256 failed');
 } else {
-  print('\t' + (1.0 / ((ts1 - ts0) / 20.0)) + ' mb/sec');
+  print('\t' + (1.0 / ((ts1 - ts0) / PROFILE_RUNS)) + ' mb/sec');
 }

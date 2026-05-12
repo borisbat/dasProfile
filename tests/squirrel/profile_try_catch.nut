@@ -24,4 +24,4 @@ try {
     throw "no loadfile"
 } catch(e) profile_it = require("profile.nut")
 
-print("try-catch loop: " + profile_it(20, function() {try_catch_loop(1000)}) + "\n");
+print("try-catch loop: " + profile_it(10, function() {try_catch_loop(1000)}) + "\n");

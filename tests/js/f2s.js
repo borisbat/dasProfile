@@ -36,7 +36,7 @@ function timeStamp() {
 
 function profile(tname,cnt,testFn) {
 	var t = 100500;
-	var count = cnt
+	var count = 10;
 	while ( count>0 ) {
 		var t0 = timeStamp();
 		testFn();
@@ -46,14 +46,14 @@ function profile(tname,cnt,testFn) {
 		count --;
 	}
 	t /= 1000.0;
-	var msg = '"'+tname+'", '+t+', '+cnt;
+	var msg = '"'+tname+'", '+t+', 10';
 	print(msg)
 }
 
 function performance_tests() {
 	{
         let nums = make_nums();
-		profile("float2string",1,function(){
+		profile("float2string",10,function(){
 			update(nums);
 		});
 	}

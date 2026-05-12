@@ -31,5 +31,5 @@ function profile_it(profiles, fn)
   return res
 end
 
-print(string.format("\"float2string\", %.8f, 20", profile_it(20, function () update(nums) end)))
+print(string.format("\"float2string\", %.8f, 10", profile_it(10, function () update(nums) end)))
 

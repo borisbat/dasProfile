@@ -9,6 +9,7 @@ let TEST_LUA_JIT = true
 let TEST_SQUIRREL = true
 let TEST_CSHARP = true
 let TEST_MONO_INTERPRETER = true
+let BENCH_RUNS = 10
 
 [no_jit, no_aot]
 def native_executable(path_no_ext : string) {
@@ -34,7 +35,7 @@ def dotnet_executable() : string {
 [no_jit, no_aot]
 def csharp_shared_library_name(base_name : string) {
     if (get_platform_name() == "windows") return "{base_name}.dll"
-    if (get_platform_name() == "macos") return "lib{base_name}.dylib"
+    if (get_platform_name() == "macos" || get_platform_name() == "darwin") return "lib{base_name}.dylib"
     return "lib{base_name}.so"
 }
 
@@ -46,6 +47,25 @@ def cpp_label {
 [no_jit, no_aot]
 def is_cpp_time {
     return !jit_enabled() && !aot_enabled()
+}
+
+[no_jit, no_aot]
+def profile_source_root() : string {
+    let local = getcwd()
+    if (fexist("{local}/config.das") && fexist("{local}/main.das") && stat("{local}/tests").is_valid) {
+        return local
+    }
+    return "{get_das_root()}/examples/profile"
+}
+
+[no_jit, no_aot]
+def profile_runtime_root() : string {
+    let local = profile_source_root()
+    let local_lua = native_executable("{local}/tests/lua/lua")
+    if (fexist(local_lua)) {
+        return local
+    }
+    return "{get_das_root()}/examples/profile"
 }
 
 struct TestFile {
@@ -104,89 +124,97 @@ def run_and_gun_silent(cmdLine : string) {
 
 [no_jit, no_aot]
 def run_files(tf : TestFile) {
+    let sourceRoot = profile_source_root()
+    let runtimeRoot = profile_runtime_root()
+
     if (TEST_LUAU && !empty(tf.luauFile)) {
-        // lua
-        let luaRoot = "{get_das_root()}/examples/profile/tests/luau"
-        let luaCompiler = native_executable("{luaRoot}/luau")
-        let luaScript = "{luaRoot}/{tf.luauFile}"
+        let luauSourceRoot = "{sourceRoot}/tests/luau"
+        let luauRuntimeRoot = "{runtimeRoot}/tests/luau"
+        let luaCompiler = native_executable("{luauRuntimeRoot}/luau")
+        let luaScript = "{luauSourceRoot}/{tf.luauFile}"
         let cwd = getcwd()
-        chdir(luaRoot)
+        chdir(luauSourceRoot)
         run_and_gun("LUAU --codegen", "{shell_quote(luaCompiler)} -O2 --codegen {shell_quote(luaScript)}")
         run_and_gun("LUAU", "{shell_quote(luaCompiler)} -O2 {shell_quote(luaScript)}")
         chdir(cwd)
     }
     if (TEST_LUA && !empty(tf.luaFile)) {
-        // lua
-        let luaRoot = "{get_das_root()}/examples/profile/tests/lua"
-        let luaCompiler = native_executable("{luaRoot}/lua")
-        let luaScript = "{luaRoot}/{tf.luaFile}"
+        let luaSourceRoot = "{sourceRoot}/tests/lua"
+        let luaRuntimeRoot = "{runtimeRoot}/tests/lua"
+        let luaCompiler = native_executable("{luaRuntimeRoot}/lua")
+        let luaScript = "{luaSourceRoot}/{tf.luaFile}"
         let cwd = getcwd()
-        chdir(luaRoot)
+        chdir(luaSourceRoot)
         run_and_gun("LUA", "{shell_quote(luaCompiler)} {shell_quote(luaScript)}")
         chdir(cwd)
     }
     if (TEST_LUA_JIT && !empty(tf.luaJitFile)) {
-        // lua
-        let luaRoot = "{get_das_root()}/examples/profile/tests/lua"
-        let luaJitCompiler = native_executable("{luaRoot}/luajit")
-        let luaJitScript = "{luaRoot}/{tf.luaJitFile}"
+        let luaSourceRoot = "{sourceRoot}/tests/lua"
+        let luaRuntimeRoot = "{runtimeRoot}/tests/lua"
+        let luaJitCompiler = native_executable("{luaRuntimeRoot}/luajit")
+        let luaJitScript = "{luaSourceRoot}/{tf.luaJitFile}"
         let cwd = getcwd()
-        chdir(luaRoot)
+        chdir(luaSourceRoot)
         run_and_gun("LUAJIT -joff", "{shell_quote(luaJitCompiler)} -O3 -joff {shell_quote(luaJitScript)}")
         run_and_gun("LUAJIT", "{shell_quote(luaJitCompiler)} -O3 {shell_quote(luaJitScript)}")
         chdir(cwd)
     }
     if (TEST_SQUIRREL && !empty(tf.nutModifiedFile)) {
-        // quirrel
-        let nutRoot = "{get_das_root()}/examples/profile/tests/squirrel"
-        let numModifiedCompiler = native_executable("{nutRoot}/sq")
-        let quirrelScript = "{nutRoot}/{tf.nutModifiedFile}"
+        let squirrelSourceRoot = "{sourceRoot}/tests/squirrel"
+        let squirrelRuntimeRoot = "{runtimeRoot}/tests/squirrel"
+        let numModifiedCompiler = native_executable("{squirrelRuntimeRoot}/sq")
+        let quirrelScript = "{squirrelSourceRoot}/{tf.nutModifiedFile}"
         let cwd = getcwd()
-        chdir(nutRoot)
+        chdir(squirrelSourceRoot)
         run_and_gun("QUIRREL", "{shell_quote(numModifiedCompiler)} {shell_quote(quirrelScript)}")
         chdir(cwd)
     }
     if (TEST_JAVASCRIPT && !empty(tf.jsFile)) {
-        // javascript
-        let jsRoot = "{get_das_root()}/examples/profile/tests/js"
-        let jsCompiler = quickjs_executable(jsRoot)
-        let jsScript = "{jsRoot}/{tf.jsFile}"
+        let jsSourceRoot = "{sourceRoot}/tests/js"
+        let jsRuntimeRoot = "{runtimeRoot}/tests/js"
+        let jsCompiler = quickjs_executable(jsRuntimeRoot)
+        let jsScript = "{jsSourceRoot}/{tf.jsFile}"
         let cwd = getcwd()
-        chdir(jsRoot)
+        chdir(jsSourceRoot)
         run_and_gun("QUICKJS", "{shell_quote(jsCompiler)} {shell_quote(jsScript)}")
         chdir(cwd)
     }
     if (TEST_CSHARP && !empty(tf.monoFile)) {
-        // csharp
-        let monoRoot = "{get_das_root()}/examples/profile/tests/cs"
+        let monoSourceRoot = "{sourceRoot}/tests/cs"
+        let monoRuntimeRoot = "{runtimeRoot}/tests/cs"
         let monoCompiler = "mcs"
         let monoRunner = "mono"
-        let monoLibrary = "{monoRoot}/{csharp_shared_library_name("addOne")}"
+        let monoLibrary = "{monoRuntimeRoot}/{csharp_shared_library_name("addOne")}"
+        let monoLibraryEnv = "DYLD_LIBRARY_PATH={shell_quote(monoRuntimeRoot)} LD_LIBRARY_PATH={shell_quote(monoRuntimeRoot)}"
+        let monoSource = "{monoSourceRoot}/{tf.monoFile}"
         let cwd = getcwd()
-        chdir(monoRoot)
-        run_and_gun_silent("{monoCompiler} -optimize+ {monoRoot}/{tf.monoFile} -out:test.exe")
+        chdir(monoSourceRoot)
+        run_and_gun_silent("{monoCompiler} -optimize+ {monoSource} -out:test.exe")
         if (TEST_MONO_INTERPRETER) {
-            run_and_gun("MONO --interpreter", "{monoRunner} --interpreter test.exe")
+            let monoInterpreterCommand = stat(monoLibrary).is_valid ? "{monoLibraryEnv} {monoRunner} --interpreter test.exe" : "{monoRunner} --interpreter test.exe"
+            run_and_gun("MONO --interpreter", monoInterpreterCommand)
         }
         if (stat(monoLibrary).is_valid) {
-            run_and_gun("MONO", "DYLD_LIBRARY_PATH={shell_quote(monoRoot)} LD_LIBRARY_PATH={shell_quote(monoRoot)} {monoRunner} test.exe")
+            run_and_gun("MONO", "{monoLibraryEnv} {monoRunner} test.exe")
         } else {
             run_and_gun("MONO", "{monoRunner} test.exe")
         }
         chdir(cwd)
     }
     if (TEST_CSHARP && !empty(tf.dotNetFile)) {
-        let cscRoot = "{get_das_root()}/examples/profile/tests/cs"
+        let cscSourceRoot = "{sourceRoot}/tests/cs"
+        let cscRuntimeRoot = "{runtimeRoot}/tests/cs"
         let dotnetRunner = dotnet_executable()
-        let dotnetProject = "{cscRoot}/dasprofile_bench.csproj"
-        let dotnetOutput = "{cscRoot}/.dotnet-bench"
-        let dotnetLibrary = "{cscRoot}/{csharp_shared_library_name("addOne")}"
-        let dotnetSource = "{cscRoot}/{tf.dotNetFile}"
+        let dotnetProject = "{cscSourceRoot}/dasprofile_bench.csproj"
+        let dotnetOutput = "{cscSourceRoot}/.dotnet-bench"
+        let dotnetLibrary = "{cscRuntimeRoot}/{csharp_shared_library_name("addOne")}"
+        let dotnetLibraryEnv = "DYLD_LIBRARY_PATH={shell_quote(dotnetOutput)}:{shell_quote(cscRuntimeRoot)} LD_LIBRARY_PATH={shell_quote(dotnetOutput)}:{shell_quote(cscRuntimeRoot)}"
+        let dotnetSource = "{cscSourceRoot}/{tf.dotNetFile}"
         let dotnetAssembly = "{dotnetOutput}/bench.dll"
         let cwd = getcwd()
-        chdir(cscRoot)
+        chdir(cscSourceRoot)
         run_and_gun_silent("{shell_quote(dotnetRunner)} build {shell_quote(dotnetProject)} -c Release -nologo -clp:ErrorsOnly -p:BenchmarkSource={shell_quote(dotnetSource)} -p:NativeLibrary={shell_quote(dotnetLibrary)} -o {shell_quote(dotnetOutput)}")
-        run_and_gun(".NET", "DYLD_LIBRARY_PATH={shell_quote(dotnetOutput)} LD_LIBRARY_PATH={shell_quote(dotnetOutput)} {shell_quote(dotnetRunner)} {shell_quote(dotnetAssembly)}")
+        run_and_gun(".NET", "{dotnetLibraryEnv} {shell_quote(dotnetRunner)} {shell_quote(dotnetAssembly)}")
         chdir(cwd)
     }
 }

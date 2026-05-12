@@ -16,14 +16,14 @@ def fibR(n) {
 [export, no_aot, no_jit]
 def main {
     var f3 = 0
-    profile(20, "fibonacci recursive") <| $() {
+    profile(BENCH_RUNS, "fibonacci recursive") <| $() {
         f3 = fibR(31)
     }
     assert(f3 == 1346269)
     if (is_cpp_time()) {
         cpp_label()
         var f5 = 0
-        profile(20, "fibonacci recursive") <| $() {
+        profile(BENCH_RUNS, "fibonacci recursive") <| $() {
             f5 = testProfile::testFibR(31)
         }
         assert(f5 == 1346269)

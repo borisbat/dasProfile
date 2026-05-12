@@ -13,4 +13,4 @@ try {
     throw "no loadfile"
 } catch(e) profile_it = require("profile.nut")
 
-print("\"native loop\", " + profile_it(20, function() {testAdds()}) + ", 20\n");
+print("\"native loop\", " + profile_it(10, function() {testAdds()}) + ", 10\n");

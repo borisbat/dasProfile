@@ -1,3 +1,5 @@
+PROFILE_RUNS = 10
+
 function profile_it(profiles, fn)
   local res
   for i = 1, profiles do

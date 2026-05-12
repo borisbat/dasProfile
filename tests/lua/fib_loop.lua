@@ -13,5 +13,5 @@ local function fibI(n)
 end
 loadfile("profile.lua")()
 
-io.write(string.format("\"fibonacci loop\", %.8f, 20\n", profile_it(20, function () fibI(6511134) end)))
+io.write(string.format("\"fibonacci loop\", %.8f, %d\n", profile_it(PROFILE_RUNS, function () fibI(6511134) end), PROFILE_RUNS))
 

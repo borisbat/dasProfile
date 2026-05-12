@@ -27,4 +27,4 @@ try {
     throw "no loadfile"
 } catch(e) profile_it = require("profile.nut")
 
-print("\"string2float\", " + profile_it(20, @() update(nums) ) + ", 20\n");
+print("\"string2float\", " + profile_it(10, @() update(nums) ) + ", 10\n");

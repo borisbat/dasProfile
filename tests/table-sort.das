@@ -34,13 +34,13 @@ def clone(var tab : array<int>; from : array<int>) {
 def main {
     var tab : array<int>
     makeRandomSequence(tab)
-    profile(20, "sort")  <| $() {
+    profile(BENCH_RUNS, "sort")  <| $() {
         var inscope tabb := tab
         sort_table(tabb)
     }
     if (is_cpp_time()) {
         cpp_label()
-        profile(20, "sort")  <| $() {
+        profile(BENCH_RUNS, "sort")  <| $() {
             var inscope tabb := tab
             testTableSort(tabb)
         }

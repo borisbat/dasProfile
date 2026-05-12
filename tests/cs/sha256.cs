@@ -15,11 +15,10 @@ class HelloWorld
         double minT = 1e+06;
         for (int i = 0; i < count; i++)
         {
-            DateTime start = DateTime.Now;
+            Stopwatch stopwatch = Stopwatch.StartNew();
             f();
-            DateTime end = DateTime.Now;
-            TimeSpan elapsed = end - start;
-            double dt = ((double)elapsed.TotalMilliseconds) / 1000.0;
+            stopwatch.Stop();
+            double dt = stopwatch.Elapsed.TotalSeconds;
             minT = Math.Min(minT, dt);
         }
         Console.WriteLine($"\"{category}\", {minT}, {count}");
@@ -146,16 +145,19 @@ class HelloWorld
 
     static void Main()
     {
+        const int profileCount = 10;
+        const int workPerRun = 1024;
         string res = "";
-        DateTime start = DateTime.Now;
         string input = new string('.', 1024);
-        profile(1, "sha256", () => {
-            res = ComputeHash(input);
+        Stopwatch stopwatch = Stopwatch.StartNew();
+        profile(profileCount, "sha256", () => {
+            for (int i = 0; i < workPerRun; i++)
+            {
+                res = ComputeHash(input);
+            }
         });
-        DateTime end = DateTime.Now;
-        TimeSpan elapsed = end - start;
-        double dt = ((double)elapsed.TotalMilliseconds) / 1000.0;
-        Console.WriteLine($"\t{1 / dt} mb/sec");
+        stopwatch.Stop();
+        Console.WriteLine($"\t{1 / (stopwatch.Elapsed.TotalSeconds / profileCount)} mb/sec");
         Debug.Assert(res == "8adcaee60bb05a9964a1df12d2f007adcb8f3fa20ff7d1ecfde0a2ac301ff412");
 
     }

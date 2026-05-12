@@ -108,14 +108,14 @@ def nbodies(n) {
 def main {
     offset_momentum(g_bodies)
     energy(g_bodies)
-    profile(10, "n-bodies")  <| $() {
+    profile(BENCH_RUNS, "n-bodies")  <| $() {
         nbodies(500000)
     }
     energy(g_bodies)
     if (is_cpp_time()) {
         cpp_label()
         testNBodiesInit()
-        profile(10, "n-bodies")  <| $() {
+        profile(BENCH_RUNS, "n-bodies")  <| $() {
             testNBodiesS(500000)
         }
         run_files(TestFile(

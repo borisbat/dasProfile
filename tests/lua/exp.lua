@@ -8,4 +8,4 @@ local function expLoop(n)
 end
 loadfile("profile.lua")()
 
-io.write(string.format("\"exp loop\", %.8f, 20\n", profile_it(20, function () expLoop(1000000) end)))
+io.write(string.format("\"exp loop\", %.8f, %d\n", profile_it(PROFILE_RUNS, function () expLoop(1000000) end), PROFILE_RUNS))

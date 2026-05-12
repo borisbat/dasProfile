@@ -110,12 +110,12 @@ def mainTreeNode {
 
 [export, no_aot, no_jit]
 def main {
-    profile(10, "tree")  <| $() {
+    profile(BENCH_RUNS, "tree")  <| $() {
         mainTreeNode()
     }
     if (is_cpp_time()) {
         cpp_label()
-        profile(10, "tree")  <| $() {
+        profile(BENCH_RUNS, "tree")  <| $() {
             testProfile::testTree()
         }
         run_files(TestFile(

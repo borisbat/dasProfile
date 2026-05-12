@@ -130,11 +130,11 @@ loadfile("profile.lua")()
 local ts0 = os.clock()
 
 
-io.write(string.format("\"sha256\", %.8f, 20\n", profile_it(20, function ()
+io.write(string.format("\"sha256\", %.8f, %d\n", profile_it(PROFILE_RUNS, function ()
     for i = 1, 1024 do
         sha256(input)
     end
-end)))
+end), PROFILE_RUNS))
 
 local ts1 = os.clock()
 
@@ -144,7 +144,7 @@ if (input ~= "8adcaee60bb05a9964a1df12d2f007adcb8f3fa20ff7d1ecfde0a2ac301ff412")
     return
 end
 
-io.write(string.format("\t%.8f mb/sec\n",1.0/((ts1-ts0)/20)))
+io.write(string.format("\t%.8f mb/sec\n",1.0/((ts1-ts0)/PROFILE_RUNS)))
 
 
 

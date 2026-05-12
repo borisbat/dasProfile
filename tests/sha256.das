@@ -112,7 +112,7 @@ def sha256(msg : array<uint8>) {
 [export, no_aot]
 def main {
     let input <- [for (i in range(1024)); uint8('.')]
-    let dt = profile(20, "sha256") <| $() {
+    let dt = profile(BENCH_RUNS, "sha256") <| $() {
         for (i in range(1024)) {
             sha256(input)
         }
@@ -121,7 +121,7 @@ def main {
     print("\t{1.0/dt} mb/sec\n")
     if (is_cpp_time()) {
         cpp_label()
-        let cpp_dt = profile(20, "sha256") <| $() {
+        let cpp_dt = profile(BENCH_RUNS, "sha256") <| $() {
             for (i in range(1024)) {
                 testProfile::testSha256(input)
             }

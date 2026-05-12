@@ -30,4 +30,4 @@ function profile_it(profiles, fn)
   return res
 end
 
-print(string.format("\"dictionary\", %.8f, 20", profile_it(20, function () dict(tab, src); end)))
+print(string.format("\"dictionary\", %.8f, 10", profile_it(10, function () dict(tab, src); end)))

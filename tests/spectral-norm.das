@@ -69,13 +69,13 @@ def test {
 def main {
     let ref = 1.274224153lf
     var f1 : double
-    profile(10, "spectral norm") <| $() {
+    profile(BENCH_RUNS, "spectral norm") <| $() {
         f1 = test()
     }
     assert(abs(f1 - ref) < 1e-5lf, "spectral norm")
     if (is_cpp_time()) {
         cpp_label()
-        profile(10, "spectral norm") <| $() {
+        profile(BENCH_RUNS, "spectral norm") <| $() {
             testSnorm()
         }
         run_files(TestFile(

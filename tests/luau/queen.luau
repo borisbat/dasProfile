@@ -72,4 +72,4 @@ function profile_it(profiles, fn)
   return res
 end
 
-print(string.format("\"queen\", %.8f, 20", profile_it(20, test)))
+print(string.format("\"queen\", %.8f, 10", profile_it(10, test)))

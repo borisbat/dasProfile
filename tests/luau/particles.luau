@@ -33,4 +33,4 @@ function profile_it(profiles, fn)
   return res
 end
 
-print(string.format("\"particles kinematics\", %.8f, 20", profile_it(20, function () update_several_timesI(particles, 100) end)))
+print(string.format("\"particles kinematics\", %.8f, 10", profile_it(10, function () update_several_timesI(particles, 100) end)))

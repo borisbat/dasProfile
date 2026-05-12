@@ -138,7 +138,7 @@ end
 
 local ts0 = os.clock()
 
-print(string.format("\"sha256\", %.8f, 20", profile_it(20, function ()
+print(string.format("\"sha256\", %.8f, 10", profile_it(10, function ()
     for i = 1, 1024 do
         sha256(input)
     end
@@ -152,7 +152,7 @@ if (input ~= "8adcaee60bb05a9964a1df12d2f007adcb8f3fa20ff7d1ecfde0a2ac301ff412")
     return
 end
 
-print(string.format("\t%.8f mb/sec",1.0/((ts1-ts0)/20)))
+print(string.format("\t%.8f mb/sec",1.0/((ts1-ts0)/10)))
 
 
 

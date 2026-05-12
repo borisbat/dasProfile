@@ -25,4 +25,4 @@ try {
     throw "no loadfile"
 } catch(e) profile_it = require("profile.nut")
 
-print("\"primes loop\", " + profile_it(20, function() {primes(14000)}) + ", 20\n");
+print("\"primes loop\", " + profile_it(10, function() {primes(14000)}) + ", 10\n");

@@ -29,5 +29,5 @@ function profile_it(profiles, fn)
   return res
 end
 
-print(string.format("\"primes loop\", %.8f, 20", profile_it(20, function () primes(14000) end)))
+print(string.format("\"primes loop\", %.8f, 10", profile_it(10, function () primes(14000) end)))
 

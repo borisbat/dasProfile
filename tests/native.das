@@ -17,7 +17,7 @@ def testAdds() {
 [export, no_aot, no_jit]
 def main {
     var count = 0
-    profile(20, "native loop") <| $() {
+    profile(BENCH_RUNS, "native loop") <| $() {
         count = testAdds()
     }
     assert(10000000 == count)

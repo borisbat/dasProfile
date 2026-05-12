@@ -68,5 +68,5 @@ end
 
 loadfile("profile.lua")()
 
-io.write(string.format("\"spectral norm\", %.8f, 10\n", profile_it(10, function () test() end)))
+io.write(string.format("\"spectral norm\", %.8f, %d\n", profile_it(PROFILE_RUNS, function () test() end), PROFILE_RUNS))
 

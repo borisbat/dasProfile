@@ -31,4 +31,4 @@ try {
 } catch(e) profile_it = require("profile.nut")
 
 // Output string
-print("\"float2string\", " + profile_it(20, @() update(nums) ) + ", 20\n");
+print("\"float2string\", " + profile_it(10, @() update(nums) ) + ", 10\n");

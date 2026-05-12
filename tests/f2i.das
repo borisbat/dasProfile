@@ -34,14 +34,14 @@ def main {
         }
     }
     var f1 = 0.0
-    profile(20, "string2float") <| $() {
+    profile(BENCH_RUNS, "string2float") <| $() {
         f1 = f2i(nums)
     }
     assert(f1 == summ)
     if (is_cpp_time()) {
         cpp_label()
         var f4 = 0.0
-        profile(20, "string2float") <| $() {
+        profile(BENCH_RUNS, "string2float") <| $() {
             f4 = test_f2i(nums, TOTAL_NUMBERS, TOTAL_TIMES)
         }
         assert(f4 == summ)

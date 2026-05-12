@@ -42,12 +42,12 @@ def test {
 
 [export, no_aot]
 def main {
-    profile(20, "mandelbrot") <| $() {
+    profile(BENCH_RUNS, "mandelbrot") <| $() {
         test()
     }
     if (is_cpp_time()) {
         cpp_label()
-        profile(20, "mandelbrot") <| $() {
+        profile(BENCH_RUNS, "mandelbrot") <| $() {
             testMandelbrot()
         }
         run_files(TestFile(

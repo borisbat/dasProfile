@@ -19,4 +19,4 @@ local function try_catch_loop(fails_count)
   end
 end
 loadfile("profile.lua")()
-io.write(string.format("try-catch loop: %.8f\n", profile_it(20, function () try_catch_loop(1000) end)))
+io.write(string.format("try-catch loop: %.8f\n", profile_it(PROFILE_RUNS, function () try_catch_loop(1000) end)))

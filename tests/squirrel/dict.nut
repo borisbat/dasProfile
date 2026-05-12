@@ -28,4 +28,4 @@ try {
     throw "no loadfile"
 } catch(e) profile_it = require("profile.nut")
 
-print("\"dictionary\", " + profile_it(20, function () {::tab<-{}; dict(::tab, ::src) }) + ", 20\n")
+print("\"dictionary\", " + profile_it(10, function () {::tab<-{}; dict(::tab, ::src) }) + ", 10\n")

@@ -39,7 +39,7 @@ function timeStamp() {
 
 function profile(tname, cnt, testFn) {
   let t = 100500;
-  let count = cnt;
+    let count = 10;
   while (count > 0) {
     const t0 = timeStamp();
     testFn();
@@ -49,9 +49,9 @@ function profile(tname, cnt, testFn) {
     count--;
   }
   t /= 1000.0;
-  print('"' + tname + '", ' + t + ', ' + cnt);
+  print('"' + tname + '", ' + t + ', 10');
 }
 
-profile('mandelbrot', 20, function () {
+profile('mandelbrot', 10, function () {
   test();
 });

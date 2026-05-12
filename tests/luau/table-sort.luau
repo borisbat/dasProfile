@@ -42,4 +42,4 @@ function profile_it(profiles, fn)
   return res
 end
 
-print(string.format("\"sort\", %.8f, 20", profile_it(20, function () table.sort(table.clone(t), cmp) end)))
+print(string.format("\"sort\", %.8f, 10", profile_it(10, function () table.sort(table.clone(t), cmp) end)))

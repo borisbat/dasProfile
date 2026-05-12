@@ -94,4 +94,4 @@ local function main()
     --print(res)
 end
 
-io.write(string.format("\"tree\", %.8f, 10\n", profile_it(10, function () main() end)))
+io.write(string.format("\"tree\", %.8f, %d\n", profile_it(PROFILE_RUNS, function () main() end), PROFILE_RUNS))

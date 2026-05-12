@@ -14,11 +14,10 @@ class HelloWorld {
     static void profile ( int count, string category, MyBlock f ) {
         double minT = 1e+06;
         for ( int i = 0; i < count; i++ ) {
-            DateTime start = DateTime.Now;
+            Stopwatch stopwatch = Stopwatch.StartNew();
             f();
-            DateTime end = DateTime.Now;
-            TimeSpan elapsed = end - start;
-            double dt = ((double)elapsed.TotalMilliseconds) / 1000.0;
+            stopwatch.Stop();
+            double dt = stopwatch.Elapsed.TotalSeconds;
             minT = Math.Min(minT, dt);
         }
         Console.WriteLine($"\"{category}\", {minT}, {count}");
@@ -56,7 +55,7 @@ class HelloWorld {
 
     static void Main() {
         var nums = Init();
-        var count = IsRunningOnMono() ? 1 : 20;
+        var count = 10;
         profile(count, "string2float", () => {
             test_f2i(nums);
         });

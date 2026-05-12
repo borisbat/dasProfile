@@ -41,6 +41,6 @@ end
 
 loadfile("profile.lua")()
 
-io.write(string.format("\"sort\", %.8f, 20\n", profile_it(20, function () table.sort(table.shallow_copy(t), cmp) end)))
+io.write(string.format("\"sort\", %.8f, %d\n", profile_it(PROFILE_RUNS, function () table.sort(table.shallow_copy(t), cmp) end), PROFILE_RUNS))
 
 

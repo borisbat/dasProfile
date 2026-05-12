@@ -44,4 +44,4 @@ try {
 function calc() {
   update_several_timesI(::particles, 100)
 }
-print("\"particles kinematics\", " + profile_it(20, calc) + ", 20\n")
+print("\"particles kinematics\", " + profile_it(10, calc) + ", 10\n")

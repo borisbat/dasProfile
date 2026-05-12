@@ -15,4 +15,4 @@ function profile_it(profiles, fn)
   return res
 end
 
-print(string.format("\"fibonacci recursive\", %.8f, 20", profile_it(20, function () fibR(31) end)))
+print(string.format("\"fibonacci recursive\", %.8f, 10", profile_it(10, function () fibR(31) end)))
