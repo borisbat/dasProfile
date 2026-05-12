@@ -201,6 +201,118 @@ def get_cpu_name {
     return platform
 }
 
+def profile_root {
+    let local = getcwd()
+    if (fexist("{local}/config.das") && fexist("{local}/main.das")) {
+        return local
+    }
+    return "{get_das_root()}/examples/profile"
+}
+
+def profile_runtime_root {
+    let local = profile_root()
+    let staged = "{get_das_root()}/examples/profile"
+    let local_lua = native_executable("{local}/tests/lua/lua")
+    if (fexist(local_lua)) return local
+    return staged
+}
+
+def native_executable(path_no_ext : string) {
+    return get_platform_name() == "windows" ? "{path_no_ext}.exe" : path_no_ext
+}
+
+def dotnet_executable {
+    let dotnet_path = "/usr/local/share/dotnet/dotnet"
+    return get_platform_name() == "windows" ? "dotnet" : (stat(dotnet_path).is_valid ? dotnet_path : "dotnet")
+}
+
+def quickjs_executable(js_root : string) {
+    return get_platform_name() == "windows" ? "qjs" : native_executable("{js_root}/qjs")
+}
+
+def first_nonempty_line(text : string) {
+    for (line in text |> split("\n")) {
+        let trimmed = line |> trim()
+        if (!empty(trimmed)) return trimmed
+    }
+    return ""
+}
+
+def probe_tool_version(args : array<string>) {
+    var output = ""
+    let exit_code = run_and_capture(args, output)
+    if (exit_code != 0 && empty(output)) return ""
+    return first_nonempty_line(output)
+}
+
+def read_build_info_value(key : string) {
+    let info_path = "{profile_root()}/profile_build_info.txt"
+    let local_build_info = "{getcwd()}/build/profile_build_info.txt"
+    let staged_build_info = "{get_das_root()}/examples/profile/profile_build_info.txt"
+    let selected_path = (
+        fexist(info_path) ? info_path
+        : (fexist(local_build_info) ? local_build_info
+        : (fexist(staged_build_info) ? staged_build_info : "")))
+    if (empty(selected_path)) return ""
+    var result = ""
+    unsafe {
+        fopen(selected_path, "r") $(f) {
+            while (!feof(f)) {
+                let st = (fgets(f)) |> trim()
+                if (empty(st)) continue
+                let sep = st |> find("=")
+                if (sep == -1) continue
+                if (((st |> slice(0, sep)) |> trim()) == key) {
+                    result = (st |> slice(sep + 1)) |> trim()
+                    break
+                }
+            }
+        }
+    }
+    return result
+}
+
+struct private VersionInfo {
+    cpp_compiler : string
+    daslang      : string
+    lua          : string
+    luajit       : string
+    luau         : string
+    mono         : string
+    dotnet       : string
+    quickjs      : string
+    quirrel      : string
+}
+
+def get_version_info {
+    let root = profile_runtime_root()
+    let lua_root = "{root}/tests/lua"
+    let luau_root = "{root}/tests/luau"
+    let js_root = "{root}/tests/js"
+    let squirrel_root = "{root}/tests/squirrel"
+
+    var luau_version = probe_tool_version([native_executable("{luau_root}/luau"), "--help"])
+    if (empty(luau_version) || (luau_version |> starts_with("Usage:"))) {
+        luau_version = read_build_info_value("luau_version")
+    }
+
+    var quickjs_version = probe_tool_version([quickjs_executable(js_root), "-h"])
+    if (empty(quickjs_version)) {
+        quickjs_version = read_build_info_value("quickjs_version")
+    }
+
+    return <- VersionInfo(
+        cpp_compiler = read_build_info_value("cxx_compiler"),
+        daslang = get_das_version(),
+        lua = probe_tool_version([native_executable("{lua_root}/lua"), "-v"]),
+        luajit = probe_tool_version([native_executable("{lua_root}/luajit"), "-v"]),
+        luau = luau_version,
+        mono = probe_tool_version(["mono", "--version"]),
+        dotnet = probe_tool_version([dotnet_executable(), "--version"]),
+        quickjs = quickjs_version,
+        quirrel = probe_tool_version([native_executable("{squirrel_root}/sq"), "-v"]))
+}
+
 struct ProfileEntry {
     language : string
     category : string
@@ -285,6 +397,7 @@ struct private ResultEntry {
 struct private Report {
     cpu       : string
     timestamp : string
+    versions  : VersionInfo
     @rename = "Interpreted"
     interpreted : table<string; array<ResultEntry>>
     @rename = "AOT or JIT"
@@ -302,7 +415,21 @@ def private collect(lang_set : table<string>; entries : array<ProfileEntry>) : t
     return <- result
 }
 
-def make_json_output {
+def print_environment_summary(cpu_name : string; version_info : VersionInfo) {
+    print("Testing on {cpu_name} at {get_clock()}\n")
+    print("  C++ compiler: {version_info.cpp_compiler}\n") if (!empty(version_info.cpp_compiler))
+    print("  daslang: {version_info.daslang}\n") if (!empty(version_info.daslang))
+    print("  Lua: {version_info.lua}\n") if (!empty(version_info.lua))
+    print("  LuaJIT: {version_info.luajit}\n") if (!empty(version_info.luajit))
+    print("  Luau: {version_info.luau}\n") if (!empty(version_info.luau))
+    print("  Mono: {version_info.mono}\n") if (!empty(version_info.mono))
+    print("  .NET: {version_info.dotnet}\n") if (!empty(version_info.dotnet))
+    print("  QuickJS: {version_info.quickjs}\n") if (!empty(version_info.quickjs))
+    print("  Quirrel: {version_info.quirrel}\n") if (!empty(version_info.quirrel))
+    print("\n")
+}
+
+def make_json_output(cpu_name : string; version_info : VersionInfo) {
     let entries <- make_entries()
 
     let interpreted_languages : table<string> <- {
@@ -312,6 +439,7 @@ def make_json_output {
         "LUA",
         "LUAJIT -joff",
         "QUIRREL",
+        "QUIRREL typed",
         "QUICKJS"}
 
     let aot_jit_languages : table<string> <- {
@@ -324,8 +452,9 @@ def make_json_output {
         "LUAU --codegen"}
 
     let report = Report(
-        cpu = get_cpu_name(),
+        cpu = cpu_name,
         timestamp = "{get_clock()}",
+        versions = version_info,
         interpreted <- collect(interpreted_languages, entries),
         aot_or_jit  <- collect(aot_jit_languages, entries))
 
@@ -356,13 +485,14 @@ def main {
     }
 
     let cpuName = get_cpu_name()
-    print("Testing on {cpuName} at {get_clock()}\n")
+    let versionInfo <- get_version_info()
+    print_environment_summary(cpuName, versionInfo)
     let singleTest = args.test
     let mainTests = !args.nomain
     print("{get_command_line_arguments()}\n")
 
     if (args.json) {
-        make_json_output()
+        make_json_output(cpuName, versionInfo)
         return
     }
     if (args.log) {

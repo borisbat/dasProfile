@@ -132,9 +132,10 @@ add_custom_target(stageProfileLuau ALL
     COMMENT "Staging Luau interpreter into SDK examples/profile/tests/luau"
 )
 
+set(QUIRREL_GIT_TAG "dec4877")
 FetchContent_Declare(quirrel_src
     GIT_REPOSITORY https://github.com/GaijinEntertainment/quirrel.git
-    GIT_TAG dec4877
+    GIT_TAG ${QUIRREL_GIT_TAG}
     GIT_SHALLOW TRUE
 )
 FetchContent_GetProperties(quirrel_src)
@@ -195,6 +196,17 @@ endif()
 
 set(LUAJIT_GIT_TAG "18b087cd2cd4ddc4a79782bf155383a689d5093d")
 set(LUAJIT_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/luajit-src")
+
+set(PROFILE_BUILD_INFO_FILE "${CMAKE_CURRENT_BINARY_DIR}/profile_build_info.txt")
+string(CONCAT PROFILE_BUILD_INFO_CONTENT
+    "cxx_compiler=${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}\n"
+    "cxx_compiler_id=${CMAKE_CXX_COMPILER_ID}\n"
+    "cxx_compiler_version=${CMAKE_CXX_COMPILER_VERSION}\n"
+    "lua_version=${LUA_VERSION}\n"
+    "luau_version=${LUAU_VERSION}\n"
+    "quickjs_version=${QUICKJS_VERSION}\n"
+    "quirrel_version=${QUIRREL_GIT_TAG}\n")
+file(GENERATE OUTPUT "${PROFILE_BUILD_INFO_FILE}" CONTENT "${PROFILE_BUILD_INFO_CONTENT}")
 
 if (WIN32)
     set(LUAJIT_EXECUTABLE_PATH "${LUAJIT_SOURCE_DIR}/src/luajit.exe")
@@ -335,7 +347,9 @@ add_custom_target(sync_profile_examples ALL
     COMMAND ${CMAKE_COMMAND} -E make_directory "${PROFILE_EXAMPLES_DIR}"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/main.das" "${PROFILE_EXAMPLES_DIR}/main.das"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/config.das" "${PROFILE_EXAMPLES_DIR}/config.das"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/log_filter.das" "${PROFILE_EXAMPLES_DIR}/log_filter.das"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/bytecode_test.das" "${PROFILE_EXAMPLES_DIR}/bytecode_test.das"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${PROFILE_BUILD_INFO_FILE}" "${PROFILE_EXAMPLES_DIR}/profile_build_info.txt"
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/tests" "${PROFILE_EXAMPLES_DIR}/tests"
     ${PROFILE_SYNC_EXTRA_TEST_COMMAND}
     COMMENT "Syncing profile scripts to SDK examples/profile"
