@@ -41,3 +41,24 @@
 
 # debug information files
 *.dwo
+tests/cs/test.exe
+tests/cs/.dotnet-bench/bench.deps.json
+tests/cs/.dotnet-bench/bench.dll
+tests/cs/.dotnet-bench/bench.runtimeconfig.json
+tests/cs/obj/dasprofile_bench.csproj.nuget.dgspec.json
+tests/cs/obj/dasprofile_bench.csproj.nuget.g.props
+tests/cs/obj/dasprofile_bench.csproj.nuget.g.targets
+tests/cs/obj/project.assets.json
+tests/cs/obj/project.nuget.cache
+tests/cs/obj/Release/net10.0/.NETCoreApp,Version=v10.0.AssemblyAttributes.cs
+tests/cs/obj/Release/net10.0/bench.dll
+tests/cs/obj/Release/net10.0/dasprofile_bench.AssemblyInfo.cs
+tests/cs/obj/Release/net10.0/dasprofile_bench.AssemblyInfoInputs.cache
+tests/cs/obj/Release/net10.0/dasprofile_bench.assets.cache
+tests/cs/obj/Release/net10.0/dasprofile_bench.csproj.CoreCompileInputs.cache
+tests/cs/obj/Release/net10.0/dasprofile_bench.csproj.FileListAbsolute.txt
+tests/cs/obj/Release/net10.0/dasprofile_bench.GeneratedMSBuildEditorConfig.editorconfig
+tests/cs/obj/Release/net10.0/dasprofile_bench.genruntimeconfig.cache
+tests/cs/obj/Release/net10.0/dasprofile_bench.sourcelink.json
+tests/cs/obj/Release/net10.0/ref/bench.dll
+tests/cs/obj/Release/net10.0/refint/bench.dll

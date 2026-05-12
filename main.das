@@ -7,15 +7,55 @@ require peg/peg
 require daslib/fio
 require daslib/rtti
 require daslib/debugapi
+require daslib/module_path
+require llvm/daslib/llvm_boost
 require ./log_filter.das
 
 var LOG_TEST_COMPILATION_TIME = false
 var ENABLE_AOT = true
 var ENABLE_JIT = true
 var ENABLE_INTERPRETER = true
+var PROFILE_MODULES_REGISTERED = false
 
 
 var failed = 0
+
+def profile_root {
+    return get_this_module_dir()
+}
+
+def profile_build_root {
+    return path_join(profile_root(), "build")
+}
+
+def profile_module_root {
+    return path_join(get_das_root(), "modules/dasProfile")
+}
+
+def register_profile_dynamic_module(module_name; file_name : string) {
+    if (has_module(module_name)) return true
+
+    let local_path = path_join(profile_build_root(), file_name)
+    if (fexist(local_path)) {
+        register_dynamic_module(local_path, module_name)
+        return true
+    }
+
+    let staged_path = path_join(profile_module_root(), file_name)
+    if (fexist(staged_path)) {
+        register_dynamic_module(staged_path, module_name)
+        return true
+    }
+
+    return false
+}
+
+def ensure_profile_modules_registered {
+    if (PROFILE_MODULES_REGISTERED || !das_is_dll_build()) return
+    let registered_profile = register_profile_dynamic_module("testProfile", "testProfile.shared_module")
+    let registered_profile_aot = register_profile_dynamic_module("testProfileAot", "testProfileAot.shared_module")
+    PROFILE_MODULES_REGISTERED = registered_profile || registered_profile_aot
+}
 
 [CommandLineArgs]
 struct ProfileArgs {
@@ -40,6 +80,7 @@ struct ProfileArgs {
 def compile_and_run(fileName : string; useAot : bool; useJit : bool) {
     let t0 = ref_time_ticks()
     var inscope access <- make_file_access("")
+    ensure_profile_modules_registered()
     using() $(var mg : ModuleGroup) {
         using() $(var cop : CodeOfPolicies) {
             cop.threadlock_context = true
@@ -124,7 +165,7 @@ def has_tests(appDir : string) {
 }
 
 def tests_dir {
-    let local = "{getcwd()}/tests"
+    let local = path_join(profile_root(), "tests")
     return has_tests(local) ? local : "{get_das_root()}/examples/profile/tests"
 }
 
@@ -201,14 +242,6 @@ def get_cpu_name {
     return platform
 }
 
-def profile_root {
-    let local = getcwd()
-    if (fexist("{local}/config.das") && fexist("{local}/main.das")) {
-        return local
-    }
-    return "{get_das_root()}/examples/profile"
-}
-
 def profile_runtime_root {
     let local = profile_root()
     let staged = "{get_das_root()}/examples/profile"
@@ -245,9 +278,17 @@ def probe_tool_version(args : array<string>) {
     return first_nonempty_line(output)
 }
 
+def get_llvm_version {
+    var major : uint
+    var minor : uint
+    var patch : uint
+    LLVMGetVersion(unsafe(addr(major)), unsafe(addr(minor)), unsafe(addr(patch)))
+    return "{int(major)}.{int(minor)}.{int(patch)}"
+}
+
 def read_build_info_value(key : string) {
     let info_path = "{profile_root()}/profile_build_info.txt"
-    let local_build_info = "{getcwd()}/build/profile_build_info.txt"
+    let local_build_info = path_join(profile_build_root(), "profile_build_info.txt")
     let staged_build_info = "{get_das_root()}/examples/profile/profile_build_info.txt"
     let selected_path = (
         fexist(info_path) ? info_path
@@ -275,6 +316,7 @@ def read_build_info_value(key : string) {
 struct private VersionInfo {
     cpp_compiler : string
     daslang      : string
+    llvm         : string
     lua          : string
     luajit       : string
     luau         : string
@@ -304,6 +346,7 @@ def get_version_info {
     return <- VersionInfo(
         cpp_compiler = read_build_info_value("cxx_compiler"),
         daslang = get_das_version(),
+        llvm = get_llvm_version(),
         lua = probe_tool_version([native_executable("{lua_root}/lua"), "-v"]),
         luajit = probe_tool_version([native_executable("{lua_root}/luajit"), "-v"]),
         luau = luau_version,
@@ -419,6 +462,7 @@ def print_environment_summary(cpu_name : string; version_info : VersionInfo) {
     print("Testing on {cpu_name} at {get_clock()}\n")
     print("  C++ compiler: {version_info.cpp_compiler}\n") if (!empty(version_info.cpp_compiler))
     print("  daslang: {version_info.daslang}\n") if (!empty(version_info.daslang))
+    print("  LLVM: {version_info.llvm}\n") if (!empty(version_info.llvm))
     print("  Lua: {version_info.lua}\n") if (!empty(version_info.lua))
     print("  LuaJIT: {version_info.luajit}\n") if (!empty(version_info.luajit))
     print("  Luau: {version_info.luau}\n") if (!empty(version_info.luau))
@@ -489,7 +533,7 @@ def main {
     print_environment_summary(cpuName, versionInfo)
     let singleTest = args.test
     let mainTests = !args.nomain
-    print("{get_command_line_arguments()}\n")
+    print("{get_command_line_arguments()}\n\n")
 
     if (args.json) {
         make_json_output(cpuName, versionInfo)
