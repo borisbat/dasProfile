@@ -311,7 +311,6 @@ def make_json_output {
         "LUAU",
         "LUA",
         "LUAJIT -joff",
-        "SQUIRREL3",
         "QUIRREL",
         "QUICKJS"}
 

@@ -6,7 +6,7 @@ let TEST_JAVASCRIPT = false
 let TEST_LUAU = true
 let TEST_LUA = true
 let TEST_LUA_JIT = true
-let TEST_SQUIRREL = false
+let TEST_SQUIRREL = true
 let TEST_CSHARP = false
 let TEST_MONO_INTERPRETER = false
 
@@ -34,8 +34,8 @@ struct TestFile {
     luaFile : string // lua
     luaJitFile : string // lua jit
     luauFile : string // luau
-    nutFile : string // squirrel
-    nutModifiedFile : string // squirrel modified
+    nutFile : string // squirrel legacy
+    nutModifiedFile : string // quirrel
     asFile  : string // angel script
     jsFile  : string // javascript
     monoFile  : string // csharp mono
@@ -118,22 +118,14 @@ def run_files(tf : TestFile) {
         run_and_gun("LUAJIT", "{shell_quote(luaJitCompiler)} -O3 {shell_quote(luaJitScript)}")
         chdir(cwd)
     }
-    if (TEST_SQUIRREL && !empty(tf.nutFile)) {
-        // squirrel
-        let nutRoot = "{get_das_root()}/examples/profile/tests/squirrel"
-        let nutCompiler = "{nutRoot}/sq3-64.exe"
-        let cwd = getcwd()
-        chdir(nutRoot)
-        run_and_gun("SQUIRREL3", "{nutCompiler} {nutRoot}/{tf.nutFile}")
-        chdir(cwd)
-    }
     if (TEST_SQUIRREL && !empty(tf.nutModifiedFile)) {
         // quirrel
         let nutRoot = "{get_das_root()}/examples/profile/tests/squirrel"
-        let numModifiedCompiler = "{nutRoot}/sq-64.exe"
+        let numModifiedCompiler = native_executable("{nutRoot}/sq")
+        let quirrelScript = "{nutRoot}/{tf.nutModifiedFile}"
         let cwd = getcwd()
         chdir(nutRoot)
-        run_and_gun("QUIRREL", "{numModifiedCompiler} {nutRoot}/{tf.nutModifiedFile}")
+        run_and_gun("QUIRREL", "{shell_quote(numModifiedCompiler)} {shell_quote(quirrelScript)}")
         chdir(cwd)
     }
     if (TEST_JAVASCRIPT && !empty(tf.jsFile)) {

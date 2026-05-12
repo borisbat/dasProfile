@@ -132,6 +132,29 @@ add_custom_target(stageProfileLuau ALL
     COMMENT "Staging Luau interpreter into SDK examples/profile/tests/luau"
 )
 
+FetchContent_Declare(quirrel_src
+    GIT_REPOSITORY https://github.com/GaijinEntertainment/quirrel.git
+    GIT_TAG dec4877
+    GIT_SHALLOW TRUE
+)
+FetchContent_GetProperties(quirrel_src)
+if (NOT quirrel_src_POPULATED)
+    FetchContent_Populate(quirrel_src)
+endif()
+add_subdirectory(${quirrel_src_SOURCE_DIR} ${quirrel_src_BINARY_DIR} EXCLUDE_FROM_ALL)
+if (NOT MSVC)
+    target_compile_options(quirrel-compiler PRIVATE -fexceptions)
+endif()
+
+add_custom_target(stageProfileQuirrel ALL
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROFILE_EXAMPLES_DIR}/tests/squirrel"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "$<TARGET_FILE:sq>"
+        "${PROFILE_EXAMPLES_DIR}/tests/squirrel/$<TARGET_FILE_NAME:sq>"
+    DEPENDS sq
+    COMMENT "Staging Quirrel interpreter into SDK examples/profile/tests/squirrel"
+)
+
 set(LUAJIT_GIT_TAG "18b087cd2cd4ddc4a79782bf155383a689d5093d")
 set(LUAJIT_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/luajit-src")
 
@@ -259,7 +282,7 @@ add_custom_target(sync_profile_examples ALL
     COMMENT "Syncing profile scripts to SDK examples/profile"
 )
 
-add_dependencies(sync_profile_examples testProfile sync_profile_descriptor profileLuaCli stageProfileLuau stageProfileLuajit)
+add_dependencies(sync_profile_examples testProfile sync_profile_descriptor profileLuaCli stageProfileLuau stageProfileLuajit stageProfileQuirrel)
 
 add_custom_target(run_profile
     COMMAND $<TARGET_FILE:DAS::daslang> "${PROFILE_EXAMPLES_DIR}/main.das"

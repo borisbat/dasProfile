@@ -24,7 +24,6 @@ def main {
     if (is_cpp_time()) {
         run_files(TestFile(
             asFile = "native.as",
-            luaJitFile = "native.lua",
             nutModifiedFile = "native.nut",
             monoFile = "native.cs",
             dotNetFile = "native.cs"
