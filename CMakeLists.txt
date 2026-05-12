@@ -8,6 +8,7 @@ endif()
 find_package(DAS REQUIRED)
 find_package(Threads REQUIRED)
 include(FetchContent)
+include(ExternalProject)
 
 # Resolve SDK root from <sdk>/lib/cmake/DAS.
 get_filename_component(DAS_SDK_ROOT "${DAS_DIR}/../../.." ABSOLUTE)
@@ -105,6 +106,96 @@ add_custom_command(TARGET profileLuaCli POST_BUILD
     COMMENT "Staging Lua interpreter into SDK examples/profile/tests/lua"
 )
 
+set(LUAU_VERSION "0.720")
+FetchContent_Declare(luau_src
+    GIT_REPOSITORY https://github.com/luau-lang/luau.git
+    GIT_TAG ${LUAU_VERSION}
+    GIT_SHALLOW TRUE
+)
+FetchContent_GetProperties(luau_src)
+if (NOT luau_src_POPULATED)
+    FetchContent_Populate(luau_src)
+endif()
+
+set(LUAU_BUILD_CLI ON CACHE BOOL "" FORCE)
+set(LUAU_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(LUAU_BUILD_WEB OFF CACHE BOOL "" FORCE)
+set(LUAU_WERROR OFF CACHE BOOL "" FORCE)
+add_subdirectory(${luau_src_SOURCE_DIR} ${luau_src_BINARY_DIR} EXCLUDE_FROM_ALL)
+
+add_custom_target(stageProfileLuau ALL
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROFILE_EXAMPLES_DIR}/tests/luau"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "$<TARGET_FILE:Luau.Repl.CLI>"
+        "${PROFILE_EXAMPLES_DIR}/tests/luau/$<TARGET_FILE_NAME:Luau.Repl.CLI>"
+    DEPENDS Luau.Repl.CLI
+    COMMENT "Staging Luau interpreter into SDK examples/profile/tests/luau"
+)
+
+set(LUAJIT_GIT_TAG "18b087cd2cd4ddc4a79782bf155383a689d5093d")
+set(LUAJIT_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/luajit-src")
+
+if (WIN32)
+    set(LUAJIT_EXECUTABLE_PATH "${LUAJIT_SOURCE_DIR}/src/luajit.exe")
+    set(LUAJIT_RUNTIME_DLL_PATH "${LUAJIT_SOURCE_DIR}/src/lua51.dll")
+    set(LUAJIT_BUILD_COMMAND ${CMAKE_COMMAND} -E chdir ${LUAJIT_SOURCE_DIR}/src cmd /c msvcbuild.bat)
+else()
+    find_program(PROFILE_MAKE_PROGRAM NAMES gmake make REQUIRED)
+    set(LUAJIT_EXECUTABLE_PATH "${LUAJIT_SOURCE_DIR}/src/luajit")
+    set(LUAJIT_RUNTIME_DLL_PATH "")
+    if (APPLE)
+        set(PROFILE_MACOSX_DEPLOYMENT_TARGET "${CMAKE_OSX_DEPLOYMENT_TARGET}")
+        if (NOT PROFILE_MACOSX_DEPLOYMENT_TARGET)
+            execute_process(
+                COMMAND sw_vers -productVersion
+                OUTPUT_VARIABLE PROFILE_MACOSX_PRODUCT_VERSION
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
+            string(REGEX MATCH "^[0-9]+\\.[0-9]+" PROFILE_MACOSX_DEPLOYMENT_TARGET "${PROFILE_MACOSX_PRODUCT_VERSION}")
+        endif()
+        set(LUAJIT_BUILD_COMMAND ${CMAKE_COMMAND} -E env MACOSX_DEPLOYMENT_TARGET=${PROFILE_MACOSX_DEPLOYMENT_TARGET} ${PROFILE_MAKE_PROGRAM})
+    else()
+        set(LUAJIT_BUILD_COMMAND ${PROFILE_MAKE_PROGRAM})
+    endif()
+endif()
+
+set(LUAJIT_BUILD_BYPRODUCTS ${LUAJIT_EXECUTABLE_PATH})
+if (WIN32)
+    list(APPEND LUAJIT_BUILD_BYPRODUCTS ${LUAJIT_RUNTIME_DLL_PATH})
+endif()
+
+ExternalProject_Add(profileLuaJit
+    GIT_REPOSITORY https://github.com/LuaJIT/LuaJIT.git
+    GIT_TAG ${LUAJIT_GIT_TAG}
+    UPDATE_DISCONNECTED TRUE
+    SOURCE_DIR ${LUAJIT_SOURCE_DIR}
+    CONFIGURE_COMMAND ""
+    BUILD_IN_SOURCE TRUE
+    BUILD_COMMAND ${LUAJIT_BUILD_COMMAND}
+    INSTALL_COMMAND ""
+    BUILD_BYPRODUCTS ${LUAJIT_BUILD_BYPRODUCTS}
+)
+
+set(PROFILE_LUAJIT_STAGE_COMMAND
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROFILE_EXAMPLES_DIR}/tests/lua"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${LUAJIT_EXECUTABLE_PATH}"
+        "${PROFILE_EXAMPLES_DIR}/tests/lua/$<IF:$<BOOL:${WIN32}>,luajit.exe,luajit>"
+)
+if (WIN32)
+    list(APPEND PROFILE_LUAJIT_STAGE_COMMAND
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${LUAJIT_RUNTIME_DLL_PATH}"
+            "${PROFILE_EXAMPLES_DIR}/tests/lua/lua51.dll"
+    )
+endif()
+
+add_custom_target(stageProfileLuajit ALL
+    ${PROFILE_LUAJIT_STAGE_COMMAND}
+    DEPENDS profileLuaJit
+    COMMENT "Staging LuaJIT interpreter into SDK examples/profile/tests/lua"
+)
+
 # Keep generated module files in one location for all generator configurations.
 foreach(cfg DEBUG RELEASE RELWITHDEBINFO MINSIZEREL)
     string(TOUPPER "${cfg}" cfg_upper)
@@ -168,7 +259,7 @@ add_custom_target(sync_profile_examples ALL
     COMMENT "Syncing profile scripts to SDK examples/profile"
 )
 
-add_dependencies(sync_profile_examples testProfile sync_profile_descriptor profileLuaCli)
+add_dependencies(sync_profile_examples testProfile sync_profile_descriptor profileLuaCli stageProfileLuau stageProfileLuajit)
 
 add_custom_target(run_profile
     COMMAND $<TARGET_FILE:DAS::daslang> "${PROFILE_EXAMPLES_DIR}/main.das"

@@ -3,9 +3,9 @@ require daslib/fio
 require daslib/strings
 
 let TEST_JAVASCRIPT = false
-let TEST_LUAU = false
+let TEST_LUAU = true
 let TEST_LUA = true
-let TEST_LUA_JIT = false
+let TEST_LUA_JIT = true
 let TEST_SQUIRREL = false
 let TEST_CSHARP = false
 let TEST_MONO_INTERPRETER = false
@@ -89,11 +89,12 @@ def run_files(tf : TestFile) {
     if (TEST_LUAU && !empty(tf.luauFile)) {
         // lua
         let luaRoot = "{get_das_root()}/examples/profile/tests/luau"
-        let luaCompiler = "{luaRoot}/luau.exe"
+        let luaCompiler = native_executable("{luaRoot}/luau")
+        let luaScript = "{luaRoot}/{tf.luauFile}"
         let cwd = getcwd()
         chdir(luaRoot)
-        run_and_gun("LUAU --codegen", "{luaCompiler} -O2 --codegen {luaRoot}/{tf.luauFile}")
-        run_and_gun("LUAU", "{luaCompiler} -O2 {luaRoot}/{tf.luauFile}")
+        run_and_gun("LUAU --codegen", "{shell_quote(luaCompiler)} -O2 --codegen {shell_quote(luaScript)}")
+        run_and_gun("LUAU", "{shell_quote(luaCompiler)} -O2 {shell_quote(luaScript)}")
         chdir(cwd)
     }
     if (TEST_LUA && !empty(tf.luaFile)) {
@@ -109,11 +110,12 @@ def run_files(tf : TestFile) {
     if (TEST_LUA_JIT && !empty(tf.luaJitFile)) {
         // lua
         let luaRoot = "{get_das_root()}/examples/profile/tests/lua"
-        let luaJitCompiler = "{luaRoot}/luajit.exe"
+        let luaJitCompiler = native_executable("{luaRoot}/luajit")
+        let luaJitScript = "{luaRoot}/{tf.luaJitFile}"
         let cwd = getcwd()
         chdir(luaRoot)
-        run_and_gun("LUAJIT -joff", "{luaJitCompiler} -O3 -joff {luaRoot}/{tf.luaJitFile}")
-        run_and_gun("LUAJIT", "{luaJitCompiler} -O3 {luaRoot}/{tf.luaJitFile}")
+        run_and_gun("LUAJIT -joff", "{shell_quote(luaJitCompiler)} -O3 -joff {shell_quote(luaJitScript)}")
+        run_and_gun("LUAJIT", "{shell_quote(luaJitCompiler)} -O3 {shell_quote(luaJitScript)}")
         chdir(cwd)
     }
     if (TEST_SQUIRREL && !empty(tf.nutFile)) {
