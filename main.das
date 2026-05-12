@@ -1,16 +1,13 @@
 options gen2
+options rtti
+options unsafe_table_lookup = false
 require daslib/clargs
 require daslib/strings_boost
 require peg/peg
 require daslib/fio
 require daslib/rtti
 require daslib/debugapi
-require math
 require ./log_filter.das
-
-options unsafe_table_lookup = false
-
-var HTML_TEST_MODE = false
 
 var LOG_TEST_COMPILATION_TIME = false
 var ENABLE_AOT = true
@@ -25,17 +22,14 @@ struct ProfileArgs {
     @clarg_doc = "Run /examples/profile/tests/<name>.das and exit"
     test : string
 
-    @clarg_doc = "Generate HTML output"
-    html : bool
+    @clarg_doc = "Generate JSON output"
+    json : bool
 
     @clarg_doc = "Log compilation time"
     log : bool
 
     @clarg_doc = "Disable main tests"
     nomain : bool
-
-    @clarg_doc = "Reserved legacy flag (currently no-op)"
-    hash : bool
 
     @clarg_short = "?"
     @clarg_name = "show-help"
@@ -44,10 +38,10 @@ struct ProfileArgs {
 }
 
 def compile_and_run(fileName : string; useAot : bool; useJit : bool) {
-    var t0 = ref_time_ticks()
+    let t0 = ref_time_ticks()
     var inscope access <- make_file_access("")
-    using <| $(var mg : ModuleGroup) {
-        using <| $(var cop : CodeOfPolicies) {
+    using() $(var mg : ModuleGroup) {
+        using() $(var cop : CodeOfPolicies) {
             cop.threadlock_context = true
             if (useJit) {
                 cop.jit_enabled = jit_enabled()
@@ -61,20 +55,20 @@ def compile_and_run(fileName : string; useAot : bool; useJit : bool) {
                 cop.jit_enabled = false
                 cop.aot = false
             }
-            compile_file(fileName, access, unsafe(addr(mg)), cop) <| $(ok, program, issues) {
+            compile_file(fileName, access, unsafe(addr(mg)), cop) $(ok, program, issues) {
                 if (!ok) {
                     print("failed to compile {fileName}\n{issues}\n")
                     failed ++
                     return
                 }
-                simulate(program) <| $(sok; context; serrors) {// no aot for now
+                simulate(program) $(sok; context; serrors) {
                     if (!sok) {
                         print("failed to simulate {fileName}\n{serrors}\n")
                         failed ++
                         return
                     }
-                    var dt = get_time_usec(t0)
-                    var sec = double(dt) / 1000000.0lf
+                    let dt = get_time_usec(t0)
+                    let sec = double(dt) / 1000000.0lf
                     if (LOG_TEST_COMPILATION_TIME) {
                         print("compiled in {sec} sec\n")
                     }
@@ -111,13 +105,8 @@ def test_single_file(fileName : string) {
 }
 
 def run_dir(appDir : string) {
-    var once = false
-    dir(appDir) <| $(fileName) {
+    dir(appDir) $(fileName) {
         if ((!fileName |> starts_with("_")) && fileName |> ends_with(".das")) {
-            if (HTML_TEST_MODE && once) {
-                return
-            }
-            once = true
             let appfile = "{appDir}/{fileName}"
             test_single_file(appfile)
         }
@@ -126,7 +115,7 @@ def run_dir(appDir : string) {
 
 def has_tests(appDir : string) {
     var found = false
-    dir(appDir) <| $(fileName) {
+    dir(appDir) $(fileName) {
         if ((!fileName |> starts_with("_")) && fileName |> ends_with(".das")) {
             found = true
         }
@@ -141,16 +130,14 @@ def tests_dir {
 
 def extract_cpu_value(line : string) {
     let p = line |> find(":")
-    if (p == -1) {
-        return line |> trim()
-    }
+    if (p == -1) return line |> trim()
     return (line |> slice(p + 1)) |> trim()
 }
 
 def first_nonempty_command_line(cmd : string) {
     var result = ""
     unsafe {
-        popen(cmd) <| $(f) {
+        popen(cmd) $(f) {
             while (!feof(f)) {
                 let st = (fgets(f)) |> trim()
                 if (!empty(st)) {
@@ -170,7 +157,7 @@ def get_cpu_name {
     } elif (platform == "linux") {
         var cpuName : string
         unsafe {
-            popen("lscpu 2>/dev/null") <| $(f) {
+            popen("lscpu 2>/dev/null") $(f) {
                 while (!feof(f)) {
                     let st = fgets(f)
                     if (st |> find("Model name:") != -1) {
@@ -182,7 +169,7 @@ def get_cpu_name {
         }
         if (!empty(cpuName)) return cpuName
         unsafe {
-            popen("cat /proc/cpuinfo 2>/dev/null") <| $(f) {
+            popen("cat /proc/cpuinfo 2>/dev/null") $(f) {
                 while (!feof(f)) {
                     let st = fgets(f)
                     if (st |> find("model name") != -1) {
@@ -196,7 +183,7 @@ def get_cpu_name {
     } elif (platform == "windows") {
         var cpuName : string
         unsafe {
-            popen("wmic cpu get name") <| $(f) {
+            popen("wmic cpu get name") $(f) {
                 var prevName = false
                 while (!feof(f)) {
                     let st = fgets(f)
@@ -239,96 +226,86 @@ def parse_short_profile_entry(invocation : string; blk : block<(var res : Profil
     }
 }
 
-def make_table(tablename : string; entries : array<ProfileEntry>; languages : table<string>) {
-    var categories : table<string; tuple<min : double; max : double>>
-    for (e in entries) {
-        if (languages |> key_exists(e.language)) {
-            if (categories |> key_exists(e.category)) {
-                let (tmin, tmax) = categories[e.category]
-                categories[e.category] = (min = min(e.time, tmin), max = max(e.time, tmax))
-            } else {
-                categories[e.category] = (min = e.time, max = e.time)
-            }
+def make_entries {
+    // Forward the parent's daslang invocation (exe + flags like -jit + script path),
+    // but drop the `--` separator and script-side args (anything after `--`).
+    var parts : array<string>
+    for (arg in get_command_line_arguments()) {
+        if (arg == "--") break
+        if (ends_with(arg, ".das") && !starts_with(arg, "-") && !starts_with(arg, "/")) {
+            parts |> push("{getcwd()}/{arg}")
+        } else {
+            parts |> push(arg)
         }
     }
-    var slanguages <- [for (l in keys(languages)); l]
-    slanguages |> sort
-    var scategories <- [for (c in keys(categories)); c]
-    scategories |> sort
-    print("\n<h2>{tablename}</h2>\n")
-    for (c in scategories) {
-        var cattime : table<string; double>
-        for (e in entries) {
-            if (e.category == c) {
-                cattime[e.language] = e.time
-            }
-        }
-        print("<h3>{c}</h3>\n")
-        print("<table class=\"chart\" style=\"width: 600px;\">\n")
-        for (l in slanguages) {
-            if (cattime |> key_exists(l)) {
-                let time = cattime[l]
-                let (tmin, tmax) = categories[c]
-                let minfactor = time / tmin
-                let maxfactor = time / tmax
-                let ts = fmt(":.4f", float(time))
-                let fs = fmt(":.2f", float(minfactor))
-                let featured = int(minfactor * 100.0lf) == 100
-                let tabclass = !featured ? "chart-bar" : "chart-bar featured"
-                let space = maxfactor * 100.0lf// make it no less than 10%?
-                print("<tr><th>{l}</th><td><div class=\"{tabclass}\" style=\"width: {space}%;\">{ts}&nbsp ({fs})</div></td></tr>\n")
-            }
-        }
-        print("</table>\n")
+    if (empty(parts)) {
+        print("Error: empty command line\n")
+        var empty_result : array<ProfileEntry>
+        return <- empty_result
     }
-}
-
-def make_entries(extra : string = "") {
-    let exe = get_command_line_arguments()[0]
-    let cmdLine = "{exe}{extra}"
+    let cmdLine = parts |> join(" ")
     var entries : array<ProfileEntry>
     var prevLanguage = ""
     unsafe {
-        var exitCode = popen(cmdLine) <| $(f) {
+        let exitCode = popen(cmdLine) $(f) {
             while (!feof(f)) {
-                let st = fgets(f)
+                let st = (fgets(f)) |> trim()
+                if (empty(st)) continue
                 var parsed = false
-                parse_profile_entry(st) <| $(res, errors) {
+                parse_profile_entry(st) $(res, errors) {
                     if (errors |> empty) {
                         prevLanguage = res.language
                         entries |> push(res)
                         parsed = true
-                        print("{res}\n")
                     }
                 }
                 if (!parsed) {
-                    parse_short_profile_entry(st) <| $(res, errors) {
+                    parse_short_profile_entry(st) $(res, errors) {
                         if (errors |> empty) {
                             res.language = prevLanguage
                             entries |> push(res)
-                            parsed = true
-                            print("{res}\n")
                         }
                     }
-                }
-                if (!parsed) {
-                    print("{st}")
                 }
             }
         }
         if (exitCode != 0) {
-            print("Error: {exitCode}\n")
+            print("Warning: subprocess exited with code {exitCode}\n")
         }
     }
     return <- entries
 }
 
-def make_html {
-    var entries <- make_entries()
-    print("\n<!DOCTYPE html><html>\n")
-    print("<body>\n")
-    print("<small>Tested on {get_cpu_name()} at {get_clock()}</small><br>\n")
-    make_table("Interpreted", entries, {
+struct private ResultEntry {
+    language : string
+    time     : double
+    count    : int
+}
+
+struct private Report {
+    cpu       : string
+    timestamp : string
+    @rename = "Interpreted"
+    interpreted : table<string; array<ResultEntry>>
+    @rename = "AOT or JIT"
+    aot_or_jit  : table<string; array<ResultEntry>>
+}
+
+def private collect(lang_set : table<string>; entries : array<ProfileEntry>) : table<string; array<ResultEntry>> {
+    var result : table<string; array<ResultEntry>>
+    for (e in entries) {
+        if (lang_set |> key_exists(e.language)) {
+            result[e.category] |> emplace(
+                ResultEntry(language = e.language, time = e.time, count = e.count))
+        }
+    }
+    return <- result
+}
+
+def make_json_output {
+    let entries <- make_entries()
+
+    let interpreted_languages : table<string> <- {
         "DAS INTERPRETER",
         "MONO --interpreter",
         "LUAU",
@@ -336,17 +313,30 @@ def make_html {
         "LUAJIT -joff",
         "SQUIRREL3",
         "QUIRREL",
-        "QUICKJS"})
-    make_table("AOT or JIT", entries, {
+        "QUICKJS"}
+
+    let aot_jit_languages : table<string> <- {
         "DAS AOT",
         "DAS JIT",
         "C++",
         "MONO",
         ".NET",
         "LUAJIT",
-        "LUAU --codegen"})
-    print("</body>\n")
-    print("</html>\n\n")
+        "LUAU --codegen"}
+
+    let report = Report(
+        cpu = get_cpu_name(),
+        timestamp = "{get_clock()}",
+        interpreted <- collect(interpreted_languages, entries),
+        aot_or_jit  <- collect(aot_jit_languages, entries))
+
+    let output_file = "profile_results.json"
+    unsafe {
+        fopen(output_file, "w") $(f) {
+            fwrite(f, sprint_json(report, true))
+        }
+    }
+    print("JSON output written to {output_file}\n")
 }
 
 [export]
@@ -360,20 +350,20 @@ def main {
         return
     }
 
-    var args <- parsed |> move_unwrap
+    let args <- parsed |> move_unwrap
     if (args.help) {
         print_help(get_command_info(type<ProfileArgs>), "profile_tests")
         return
     }
 
-    var cpuName = get_cpu_name()
+    let cpuName = get_cpu_name()
     print("Testing on {cpuName} at {get_clock()}\n")
     let singleTest = args.test
     let mainTests = !args.nomain
     print("{get_command_line_arguments()}\n")
 
-    if (args.html) {
-        make_html()
+    if (args.json) {
+        make_json_output()
         return
     }
     if (args.log) {
