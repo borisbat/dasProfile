@@ -4,11 +4,21 @@ require daslib/strings
 
 let TEST_JAVASCRIPT = false
 let TEST_LUAU = false
-let TEST_LUA = false
+let TEST_LUA = true
 let TEST_LUA_JIT = false
 let TEST_SQUIRREL = false
 let TEST_CSHARP = false
 let TEST_MONO_INTERPRETER = false
+
+[no_jit, no_aot]
+def native_executable(path_no_ext : string) {
+    return get_platform_name() == "windows" ? "{path_no_ext}.exe" : path_no_ext
+}
+
+[no_jit, no_aot]
+def shell_quote(path : string) {
+    return "\"{path}\""
+}
 
 [no_jit, no_aot]
 def cpp_label {
@@ -89,10 +99,11 @@ def run_files(tf : TestFile) {
     if (TEST_LUA && !empty(tf.luaFile)) {
         // lua
         let luaRoot = "{get_das_root()}/examples/profile/tests/lua"
-        let luaCompiler = "{luaRoot}/lua.exe"
+        let luaCompiler = native_executable("{luaRoot}/lua")
+        let luaScript = "{luaRoot}/{tf.luaFile}"
         let cwd = getcwd()
         chdir(luaRoot)
-        run_and_gun("LUA", "{luaCompiler} {luaRoot}/{tf.luaFile}")
+        run_and_gun("LUA", "{shell_quote(luaCompiler)} {shell_quote(luaScript)}")
         chdir(cwd)
     }
     if (TEST_LUA_JIT && !empty(tf.luaJitFile)) {
