@@ -2,7 +2,7 @@ options gen2
 require daslib/fio
 require daslib/strings
 
-let TEST_JAVASCRIPT = false
+let TEST_JAVASCRIPT = true
 let TEST_LUAU = true
 let TEST_LUA = true
 let TEST_LUA_JIT = true
@@ -18,6 +18,11 @@ def native_executable(path_no_ext : string) {
 [no_jit, no_aot]
 def shell_quote(path : string) {
     return "\"{path}\""
+}
+
+[no_jit, no_aot]
+def quickjs_executable(js_root : string) {
+    return get_platform_name() == "windows" ? "qjs" : native_executable("{js_root}/qjs")
 }
 
 [no_jit, no_aot]
@@ -131,10 +136,11 @@ def run_files(tf : TestFile) {
     if (TEST_JAVASCRIPT && !empty(tf.jsFile)) {
         // javascript
         let jsRoot = "{get_das_root()}/examples/profile/tests/js"
-        let jsCompiler = "{jsRoot}/qjs.exe"
+        let jsCompiler = quickjs_executable(jsRoot)
+        let jsScript = "{jsRoot}/{tf.jsFile}"
         let cwd = getcwd()
         chdir(jsRoot)
-        run_and_gun("QUICKJS", "{jsCompiler} {jsRoot}/{tf.jsFile}")
+        run_and_gun("QUICKJS", "{shell_quote(jsCompiler)} {shell_quote(jsScript)}")
         chdir(cwd)
     }
     if (TEST_CSHARP && !empty(tf.monoFile)) {

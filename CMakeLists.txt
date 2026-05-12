@@ -155,6 +155,44 @@ add_custom_target(stageProfileQuirrel ALL
     COMMENT "Staging Quirrel interpreter into SDK examples/profile/tests/squirrel"
 )
 
+set(QUICKJS_VERSION "2025-09-13-2")
+set(QUICKJS_URL "https://bellard.org/quickjs/quickjs-${QUICKJS_VERSION}.tar.xz")
+set(QUICKJS_URL_HASH "SHA256=996c6b5018fc955ad4d06426d0e9cb713685a00c825aa5c0418bd53f7df8b0b4")
+
+if (WIN32)
+    add_custom_target(stageProfileQuickJs ALL
+        COMMENT "QuickJS must be installed separately on Windows and available as qjs in PATH"
+    )
+else()
+    if (NOT PROFILE_MAKE_PROGRAM)
+        find_program(PROFILE_MAKE_PROGRAM NAMES gmake make REQUIRED)
+    endif()
+
+    set(QUICKJS_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/quickjs-src")
+    set(QUICKJS_EXECUTABLE_PATH "${QUICKJS_SOURCE_DIR}/qjs")
+
+    ExternalProject_Add(profileQuickJs
+        URL ${QUICKJS_URL}
+        URL_HASH ${QUICKJS_URL_HASH}
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+        SOURCE_DIR ${QUICKJS_SOURCE_DIR}
+        CONFIGURE_COMMAND ""
+        BUILD_IN_SOURCE TRUE
+        BUILD_COMMAND ${PROFILE_MAKE_PROGRAM} qjs
+        INSTALL_COMMAND ""
+        BUILD_BYPRODUCTS ${QUICKJS_EXECUTABLE_PATH}
+    )
+
+    add_custom_target(stageProfileQuickJs ALL
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${PROFILE_EXAMPLES_DIR}/tests/js"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${QUICKJS_EXECUTABLE_PATH}"
+            "${PROFILE_EXAMPLES_DIR}/tests/js/qjs"
+        DEPENDS profileQuickJs
+        COMMENT "Staging QuickJS interpreter into SDK examples/profile/tests/js"
+    )
+endif()
+
 set(LUAJIT_GIT_TAG "18b087cd2cd4ddc4a79782bf155383a689d5093d")
 set(LUAJIT_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/luajit-src")
 
@@ -282,7 +320,7 @@ add_custom_target(sync_profile_examples ALL
     COMMENT "Syncing profile scripts to SDK examples/profile"
 )
 
-add_dependencies(sync_profile_examples testProfile sync_profile_descriptor profileLuaCli stageProfileLuau stageProfileLuajit stageProfileQuirrel)
+add_dependencies(sync_profile_examples testProfile sync_profile_descriptor profileLuaCli stageProfileLuau stageProfileLuajit stageProfileQuirrel stageProfileQuickJs)
 
 add_custom_target(run_profile
     COMMAND $<TARGET_FILE:DAS::daslang> "${PROFILE_EXAMPLES_DIR}/main.das"
