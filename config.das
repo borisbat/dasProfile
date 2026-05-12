@@ -39,8 +39,8 @@ struct TestFile {
     luaFile : string // lua
     luaJitFile : string // lua jit
     luauFile : string // luau
-    nutFile : string // squirrel legacy
-    nutModifiedFile : string // quirrel
+    nutFile : string // quirrel
+    nutModifiedFile : string // quirrel modified
     asFile  : string // angel script
     jsFile  : string // javascript
     monoFile  : string // csharp mono
