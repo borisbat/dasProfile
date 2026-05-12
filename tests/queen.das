@@ -56,7 +56,7 @@ def main {
             luaJitFile = "queen.lua",
             nutFile = "queen.nut",
             nutModifiedFile = "queen.nut",
-            // monoFile = "queen.cs",
+            monoFile = "queen.cs",
             dotNetFile = "queen.cs"))
     }
 }
