@@ -131,6 +131,9 @@ def main {
         run_files(TestFile(
             luauFile = "sha256.luau",
             luaJitFile = "sha256.lua",
+            nutFile = "sha256.nut",
+            nutModifiedFile = "sha256.nut",
+            jsFile = "sha256.js",
             dotNetFile = "sha256.cs"))
     }
 }

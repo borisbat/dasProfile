@@ -257,6 +257,27 @@ add_custom_target(stageProfileLuajit ALL
     COMMENT "Staging LuaJIT interpreter into SDK examples/profile/tests/lua"
 )
 
+add_library(profileAddOne SHARED
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/cs/addOne/addOne.c
+)
+set_target_properties(profileAddOne PROPERTIES
+    OUTPUT_NAME addOne
+    POSITION_INDEPENDENT_CODE ON
+)
+
+add_custom_target(stageProfileAddOne ALL
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROFILE_EXAMPLES_DIR}/tests/cs"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROFILE_EXAMPLES_DIR}/tests/lua"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "$<TARGET_FILE:profileAddOne>"
+        "${PROFILE_EXAMPLES_DIR}/tests/cs/$<TARGET_FILE_NAME:profileAddOne>"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "$<TARGET_FILE:profileAddOne>"
+        "${PROFILE_EXAMPLES_DIR}/tests/lua/$<TARGET_FILE_NAME:profileAddOne>"
+    DEPENDS profileAddOne
+    COMMENT "Staging addOne shared library into SDK examples/profile/tests"
+)
+
 # Keep generated module files in one location for all generator configurations.
 foreach(cfg DEBUG RELEASE RELWITHDEBINFO MINSIZEREL)
     string(TOUPPER "${cfg}" cfg_upper)
@@ -320,7 +341,7 @@ add_custom_target(sync_profile_examples ALL
     COMMENT "Syncing profile scripts to SDK examples/profile"
 )
 
-add_dependencies(sync_profile_examples testProfile sync_profile_descriptor profileLuaCli stageProfileLuau stageProfileLuajit stageProfileQuirrel stageProfileQuickJs)
+add_dependencies(sync_profile_examples testProfile sync_profile_descriptor profileLuaCli stageProfileLuau stageProfileLuajit stageProfileQuirrel stageProfileQuickJs stageProfileAddOne)
 
 add_custom_target(run_profile
     COMMAND $<TARGET_FILE:DAS::daslang> "${PROFILE_EXAMPLES_DIR}/main.das"

@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 
 class HelloWorld {
 
-    [DllImport ("addOne.dll")]
+    [DllImport ("addOne")]
     private static extern int AddOne ( int n );
 
     delegate void MyBlock();

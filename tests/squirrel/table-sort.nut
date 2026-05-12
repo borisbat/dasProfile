@@ -31,7 +31,9 @@ for (local i = 0; i < n; i++) {
 }
 
 function cmp(lhs, rhs) {
-  return lhs > rhs;
+  if (lhs < rhs) return -1;
+  if (lhs > rhs) return 1;
+  return 0;
 }
 
 local profile_it

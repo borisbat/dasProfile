@@ -3,10 +3,13 @@ ffi.cdef[[
 int addOne(int);
 ]]
 
+local addOne = ffi.load(jit.os == "Windows" and "addOne.dll"
+    or (jit.os == "OSX" and "./libaddOne.dylib" or "./libaddOne.so"))
+
 local function testAdds()
     local count = 0
     for i = 1, 10000000 do
-        count = ffi.C.addOne(count)
+        count = addOne.addOne(count)
     end
     return count
 end

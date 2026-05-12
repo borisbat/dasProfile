@@ -54,6 +54,9 @@ def main {
             luauFile = "mandelbrot.luau",
             luaFile = "mandelbrot.lua",
             luaJitFile = "mandelbrot.lua",
+            nutFile = "mandelbrot.nut",
+            nutModifiedFile = "mandelbrot.nut",
+            jsFile = "mandelbrot.js",
             monoFile = "mandelbrot.cs",
             dotNetFile = "mandelbrot.cs"))
     }

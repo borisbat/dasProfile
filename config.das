@@ -7,8 +7,8 @@ let TEST_LUAU = true
 let TEST_LUA = true
 let TEST_LUA_JIT = true
 let TEST_SQUIRREL = true
-let TEST_CSHARP = false
-let TEST_MONO_INTERPRETER = false
+let TEST_CSHARP = true
+let TEST_MONO_INTERPRETER = true
 
 [no_jit, no_aot]
 def native_executable(path_no_ext : string) {
@@ -23,6 +23,19 @@ def shell_quote(path : string) {
 [no_jit, no_aot]
 def quickjs_executable(js_root : string) {
     return get_platform_name() == "windows" ? "qjs" : native_executable("{js_root}/qjs")
+}
+
+[no_jit, no_aot]
+def dotnet_executable() : string {
+    let dotnetPath = "/usr/local/share/dotnet/dotnet"
+    return get_platform_name() == "windows" ? "dotnet" : (stat(dotnetPath).is_valid ? dotnetPath : "dotnet")
+}
+
+[no_jit, no_aot]
+def csharp_shared_library_name(base_name : string) {
+    if (get_platform_name() == "windows") return "{base_name}.dll"
+    if (get_platform_name() == "macos") return "lib{base_name}.dylib"
+    return "lib{base_name}.so"
 }
 
 [no_jit, no_aot]
@@ -148,21 +161,32 @@ def run_files(tf : TestFile) {
         let monoRoot = "{get_das_root()}/examples/profile/tests/cs"
         let monoCompiler = "mcs"
         let monoRunner = "mono"
+        let monoLibrary = "{monoRoot}/{csharp_shared_library_name("addOne")}"
         let cwd = getcwd()
         chdir(monoRoot)
         run_and_gun_silent("{monoCompiler} -optimize+ {monoRoot}/{tf.monoFile} -out:test.exe")
         if (TEST_MONO_INTERPRETER) {
             run_and_gun("MONO --interpreter", "{monoRunner} --interpreter test.exe")
         }
-        run_and_gun("MONO", "{monoRunner} test.exe")
+        if (stat(monoLibrary).is_valid) {
+            run_and_gun("MONO", "DYLD_LIBRARY_PATH={shell_quote(monoRoot)} LD_LIBRARY_PATH={shell_quote(monoRoot)} {monoRunner} test.exe")
+        } else {
+            run_and_gun("MONO", "{monoRunner} test.exe")
+        }
+        chdir(cwd)
     }
     if (TEST_CSHARP && !empty(tf.dotNetFile)) {
         let cscRoot = "{get_das_root()}/examples/profile/tests/cs"
-        let cscCompiler = "csc"
+        let dotnetRunner = dotnet_executable()
+        let dotnetProject = "{cscRoot}/dasprofile_bench.csproj"
+        let dotnetOutput = "{cscRoot}/.dotnet-bench"
+        let dotnetLibrary = "{cscRoot}/{csharp_shared_library_name("addOne")}"
+        let dotnetSource = "{cscRoot}/{tf.dotNetFile}"
+        let dotnetAssembly = "{dotnetOutput}/bench.dll"
         let cwd = getcwd()
         chdir(cscRoot)
-        run_and_gun_silent("{cscCompiler} /optimize+ {cscRoot}/{tf.dotNetFile} /out:testdotnet.exe")
-        run_and_gun(".NET", "testdotnet.exe")
+        run_and_gun_silent("{shell_quote(dotnetRunner)} build {shell_quote(dotnetProject)} -c Release -nologo -clp:ErrorsOnly -p:BenchmarkSource={shell_quote(dotnetSource)} -p:NativeLibrary={shell_quote(dotnetLibrary)} -o {shell_quote(dotnetOutput)}")
+        run_and_gun(".NET", "DYLD_LIBRARY_PATH={shell_quote(dotnetOutput)} LD_LIBRARY_PATH={shell_quote(dotnetOutput)} {shell_quote(dotnetRunner)} {shell_quote(dotnetAssembly)}")
         chdir(cwd)
     }
 }
