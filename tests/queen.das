@@ -58,6 +58,7 @@ def main {
             luaJitFile = "queen.lua",
             nutFile = "queen.nut",
             nutModifiedFile = "queen.nut",
+            jsFile = "queen.js",
             monoFile = "queen.cs",
             dotNetFile = "queen.cs"))
     }

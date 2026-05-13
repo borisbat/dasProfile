@@ -48,6 +48,7 @@ def main {
             luaFile = "table-sort.lua",
             luaJitFile = "table-sort.lua",
             luauFile = "table-sort.luau",
+            jsFile = "table-sort.js",
             monoFile = "table-sort.cs",
             dotNetFile = "table-sort.cs",
             nutFile = "table-sort.nut",

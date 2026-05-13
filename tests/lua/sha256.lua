@@ -1,10 +1,62 @@
+local unpack = table.unpack or unpack
 local bit = bit or {}
-local band = bit.band or bit32.band
-local bnot = bit.bnot or bit32.bnot
-local bxor = bit.bxor or bit32.bxor
+local bit32 = bit32 or {}
 
-local rrotate = bit.ror or bit32.rrotate
-local rshift = bit.rshift or bit32.rshift
+local native_band = bit.band or bit32.band
+local native_bnot = bit.bnot or bit32.bnot
+local native_bxor = bit.bxor or bit32.bxor
+local native_rrotate = bit.ror or bit32.rrotate
+local native_rshift = bit.rshift or bit32.rshift
+
+if not native_band then
+    local load_bitops = assert((load or loadstring)([[
+        return function(a, b)
+            return (a & b) & 0xffffffff
+        end,
+        function(a)
+            return (~a) & 0xffffffff
+        end,
+        function(a, b)
+            return (a ~ b) & 0xffffffff
+        end,
+        function(a, b)
+            a = a & 0xffffffff
+            b = b & 31
+            return ((a >> b) | (a << ((32 - b) & 31))) & 0xffffffff
+        end,
+        function(a, b)
+            return (a & 0xffffffff) >> b
+        end
+    ]]))
+
+    native_band, native_bnot, native_bxor, native_rrotate, native_rshift = load_bitops()
+end
+
+local function band(...)
+    local result = select(1, ...)
+    if select("#", ...) == 1 then
+        return native_band(result, 0xffffffff)
+    end
+    for i = 2, select("#", ...) do
+        result = native_band(result, select(i, ...))
+    end
+    return result
+end
+
+local function bxor(...)
+    local result = select(1, ...)
+    if select("#", ...) == 1 then
+        return native_bxor(result, 0)
+    end
+    for i = 2, select("#", ...) do
+        result = native_bxor(result, select(i, ...))
+    end
+    return result
+end
+
+local bnot = native_bnot
+local rrotate = native_rrotate
+local rshift = native_rshift
 
 local primes =
 {
@@ -37,6 +89,10 @@ end
 local function toBytes(value, length)
     local str = ""
 
+    if value < 0 then
+        value = value + 4294967296
+    end
+
     for i = 1, length do
         local rem = value % 256
         str = string.char(rem) .. str
@@ -68,7 +124,7 @@ local function digestBlock(msg, i, hash)
         local s0 = bxor(rrotate(v, 7), rrotate(v, 18), rshift(v, 3))
 
         v = digest[j - 2]
-        digest[j] = digest[j - 16] + s0 + digest[j - 7] + bxor(rrotate(v, 17), rrotate(v, 19), rshift(v, 10))
+        digest[j] = band(digest[j - 16] + s0 + digest[j - 7] + bxor(rrotate(v, 17), rrotate(v, 19), rshift(v, 10)))
     end
 
     local a, b, c, d, e, f, g, h = unpack(hash)
@@ -77,13 +133,13 @@ local function digestBlock(msg, i, hash)
         local s0 = bxor(rrotate(a, 2), rrotate(a, 13), rrotate(a, 22))
         local maj = bxor(band(a, b), band(a, c), band(b, c))
 
-        local t2 = s0 + maj
+        local t2 = band(s0 + maj)
         local s1 = bxor(rrotate(e, 6), rrotate(e, 11), rrotate(e, 25))
 
         local ch = bxor(band(e, f), band(bnot(e), g))
-        local t1 = h + s1 + ch + primes[i] + digest[i]
+        local t1 = band(h + s1 + ch + primes[i] + digest[i])
 
-        h, g, f, e, d, c, b, a = g, f, e, d + t1, c, b, a, t1 + t2
+        h, g, f, e, d, c, b, a = g, f, e, band(d + t1), c, b, a, band(t1 + t2)
     end
 
     hash[1] = band(hash[1] + a)
