@@ -9,7 +9,7 @@ function update(nums) {
     local summ = 0;
     for (local i = 0; i < TOTAL_TIMES; i++) {
         foreach (num in nums) {
-            summ += num.tofloat();
+            summ += num.tostring().len();
         }
     }
     return summ;
@@ -17,7 +17,7 @@ function update(nums) {
 
 local nums = [];
 for (local i = 1; i <= TOTAL_NUMBERS; i++) {
-    nums.append(mk_float(i).tostring());
+    nums.append(mk_float(i));
 }
 
 // Equivalent of loadfile("profile.lua")() in Squirrel would depend on context.

@@ -10,7 +10,7 @@ function update(nums) {
     local summ = 0;
     for (local i = 0; i < TOTAL_TIMES; i++) {
         foreach (num in nums) {
-            summ += num.tostring().len();
+            summ += num.tofloat();
         }
     }
     return summ;
@@ -18,7 +18,7 @@ function update(nums) {
 
 local nums = [];
 for (local i = 1; i <= TOTAL_NUMBERS; i++) {
-    nums.append(mk_float(i));
+    nums.append(mk_float(i).tostring());
 }
 local profile_it
 try {
