@@ -40,17 +40,15 @@ def test {
 }
 
 
-var S = 0
-
 [export, no_aot]
 def main {
     profile(BENCH_RUNS, "mandelbrot") <| $() {
-        S += test()
+        test()
     }
     if (is_cpp_time()) {
         cpp_label()
         profile(BENCH_RUNS, "mandelbrot") <| $() {
-            S += testMandelbrot()
+            testMandelbrot()
         }
         run_files(TestFile(
             luauFile = "mandelbrot.luau",
