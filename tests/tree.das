@@ -25,17 +25,17 @@ var {
 }
 
 [unsafe_deref, hint(alwaysinline, hot)]
-def merge(var lower, greater : Node?) : Node? {
+def merge(var lower, greater : Node?; var result : Node?&) {
     if (lower == null) {
-        return greater
+        result = greater
     } elif (greater == null) {
-        return lower
+        result = lower
     } elif (lower.y < greater.y) {
-        lower.right = merge(lower.right, greater)
-        return lower
+        result = lower
+        merge(lower.right, greater, lower.right)
     } else {
-        greater.left = merge(lower, greater.left)
-        return greater
+        result = greater
+        merge(lower, greater.left, greater.left)
     }
 }
 
@@ -53,18 +53,20 @@ def split(var orig : Node?; var lower : Node?&; var greaterOrEqual : Node?&; val
     }
 }
 
-[hint(alwaysinline, hot)]
+[unsafe_deref, hint(alwaysinline, hot)]
 def hasValue(var orig : Node?&; x : int) : bool {
     var lower, equal, greater : Node?
     var equalOrGreater : Node?
     split(orig, lower, equalOrGreater, x)
     split(equalOrGreater, equal, greater, x + 1)
     let res = equal != null
-    orig = merge(merge(lower, equal), greater)
+    var tmp : Node?
+    merge(lower, equal, tmp)
+    merge(tmp, greater, orig)
     return res
 }
 
-[hint(alwaysinline, hot)]
+[unsafe_deref, hint(alwaysinline, hot)]
 def insert(var orig : Node?&; x : int) {
     var lower, equal, greater : Node?
     var equalOrGreater : Node?
@@ -73,16 +75,21 @@ def insert(var orig : Node?&; x : int) {
     if (equal == null) {
         equal = new Node(x = x, y = random_big_int(seed))
     }
-    orig = merge(merge(lower, equal), greater)
+    var tmp : Node?
+    merge(lower, equal, tmp)
+    merge(tmp, greater, orig)
 }
 
-[hint(alwaysinline, hot)]
+[unsafe_deref, hint(alwaysinline, hot)]
 def erase_raw(var orig : Node?&; x : int) {
     var lower, equal, greater : Node?
     var equalOrGreater : Node?
     split(orig, lower, equalOrGreater, x)
     split(equalOrGreater, equal, greater, x + 1)
-    orig = merge(lower, greater)
+    merge(lower, greater, orig)
+    unsafe {
+        delete equal
+    }
 }
 
 def mainTreeNode {
