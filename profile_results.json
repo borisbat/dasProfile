@@ -1,6 +1,6 @@
 {
   "cpu":"Apple M1 Max",
-  "timestamp":"Wed May 13 02:27:45 2026",
+  "timestamp":"Wed May 13 02:48:38 2026",
   "versions":{
     "cpp_compiler":"AppleClang 21.0.0.21000101",
     "daslang":"0.6.2",
@@ -17,64 +17,64 @@
     "sha256":[
       {
         "language":"DAS INTERPRETER",
-        "time":0.092693999999999999,
+        "time":0.092859999999999998,
         "count":10
       },
       {
         "language":"LUAU",
-        "time":0.37551403999999999,
+        "time":0.37572767000000001,
         "count":10
       },
       {
         "language":"LUA",
-        "time":2.219157,
+        "time":2.224072,
         "count":10
       },
       {
         "language":"LUAJIT -joff",
-        "time":0.25491000000000003,
+        "time":0.25337100000000001,
         "count":10
       },
       {
         "language":"QUIRREL",
-        "time":0.73658100000000004,
+        "time":0.73634500000000003,
         "count":10
       },
       {
         "language":"QUICKJS",
-        "time":0.92900000000000005,
+        "time":0.92800000000000005,
         "count":10
       },
       {
         "language":"MONO --interpreter",
-        "time":0.35994500000000001,
+        "time":0.36082029999999998,
         "count":10
       }
     ],
     "dictionary":[
       {
         "language":"DAS INTERPRETER",
-        "time":0.019501000000000001,
+        "time":0.016657999999999999,
         "count":10
       },
       {
         "language":"LUAU",
-        "time":0.03388729,
+        "time":0.03571875,
         "count":10
       },
       {
         "language":"LUA",
-        "time":0.056968999999999999,
+        "time":0.053598,
         "count":10
       },
       {
         "language":"LUAJIT -joff",
-        "time":0.023129,
+        "time":0.023007,
         "count":10
       },
       {
         "language":"QUIRREL",
-        "time":0.072738999999999998,
+        "time":0.074822,
         "count":10
       },
       {
@@ -84,120 +84,120 @@
       },
       {
         "language":"MONO --interpreter",
-        "time":0.3465028,
+        "time":0.35494759999999997,
         "count":10
       }
     ],
     "n-bodies":[
       {
         "language":"DAS INTERPRETER",
-        "time":0.15563199999999999,
+        "time":0.155752,
         "count":10
       },
       {
         "language":"LUAU",
-        "time":0.52608283,
+        "time":0.52693471000000003,
         "count":10
       },
       {
         "language":"LUA",
-        "time":0.67337899999999995,
+        "time":0.68319600000000003,
         "count":10
       },
       {
         "language":"LUAJIT -joff",
-        "time":0.51775499999999997,
+        "time":0.520397,
         "count":10
       },
       {
         "language":"QUIRREL",
-        "time":1.0889800000000001,
+        "time":1.0931599999999999,
         "count":10
       },
       {
         "language":"QUICKJS",
-        "time":1.3779999999999999,
+        "time":1.379,
         "count":10
       },
       {
         "language":"MONO --interpreter",
-        "time":0.43122880000000002,
+        "time":0.43229190000000001,
         "count":10
       }
     ],
     "spectral norm":[
       {
         "language":"DAS INTERPRETER",
-        "time":0.18296799999999999,
+        "time":0.183585,
         "count":10
       },
       {
         "language":"LUAU",
-        "time":0.17326646000000001,
+        "time":0.17222471,
         "count":10
       },
       {
         "language":"LUA",
-        "time":0.31247200000000003,
+        "time":0.31288500000000002,
         "count":10
       },
       {
         "language":"LUAJIT -joff",
-        "time":0.34504000000000001,
+        "time":0.34671400000000002,
         "count":10
       },
       {
         "language":"QUIRREL",
-        "time":0.65718600000000005,
+        "time":0.65984100000000001,
         "count":10
       },
       {
         "language":"QUICKJS",
-        "time":0.76200000000000001,
+        "time":0.76300000000000001,
         "count":10
       },
       {
         "language":"MONO --interpreter",
-        "time":0.15918689999999999,
+        "time":0.1608813,
         "count":10
       }
     ],
     "native loop":[
       {
         "language":"DAS INTERPRETER",
-        "time":0.025574,
+        "time":0.025642999999999999,
         "count":10
       },
       {
         "language":"MONO --interpreter",
-        "time":1.0248363,
+        "time":1.0198681000000001,
         "count":10
       }
     ],
     "mandelbrot":[
       {
         "language":"DAS INTERPRETER",
-        "time":0.0020709999999999999,
+        "time":0.0020569999999999998,
         "count":10
       },
       {
         "language":"LUAU",
-        "time":0.035457669999999997,
+        "time":0.035791040000000003,
         "count":10
       },
       {
         "language":"LUA",
-        "time":0.075769000000000003,
+        "time":0.077135999999999996,
         "count":10
       },
       {
         "language":"LUAJIT -joff",
-        "time":0.045613000000000001,
+        "time":0.045928999999999998,
         "count":10
       },
       {
         "language":"QUIRREL",
-        "time":0.0068199999999999997,
+        "time":0.0067460000000000003,
         "count":10
       },
       {
@@ -207,34 +207,34 @@
       },
       {
         "language":"MONO --interpreter",
-        "time":0.0095438999999999993,
+        "time":0.0095098000000000005,
         "count":10
       }
     ],
     "exp loop":[
       {
         "language":"DAS INTERPRETER",
-        "time":0.0097529999999999995,
+        "time":0.0098969999999999995,
         "count":10
       },
       {
         "language":"LUAU",
-        "time":0.0095729999999999999,
+        "time":0.0096185400000000001,
         "count":10
       },
       {
         "language":"LUA",
-        "time":0.023231000000000002,
+        "time":0.023254,
         "count":10
       },
       {
         "language":"LUAJIT -joff",
-        "time":0.015827000000000001,
+        "time":0.015689000000000002,
         "count":10
       },
       {
         "language":"QUIRREL",
-        "time":0.041501000000000003,
+        "time":0.041327999999999997,
         "count":10
       },
       {
@@ -244,34 +244,34 @@
       },
       {
         "language":"MONO --interpreter",
-        "time":0.0255488,
+        "time":0.025937700000000001,
         "count":10
       }
     ],
     "string2float":[
       {
         "language":"DAS INTERPRETER",
-        "time":0.017439,
+        "time":0.017469999999999999,
         "count":10
       },
       {
         "language":"LUAU",
-        "time":0.022653619999999999,
+        "time":0.022678920000000002,
         "count":10
       },
       {
         "language":"LUA",
-        "time":0.067330000000000001,
+        "time":0.066203999999999999,
         "count":10
       },
       {
         "language":"LUAJIT -joff",
-        "time":0.16212399999999999,
+        "time":0.16407099999999999,
         "count":10
       },
       {
         "language":"QUIRREL",
-        "time":0.049883999999999998,
+        "time":0.049808999999999999,
         "count":10
       },
       {
@@ -281,44 +281,44 @@
       },
       {
         "language":"MONO --interpreter",
-        "time":1.3655809999999999,
+        "time":1.3685320000000001,
         "count":10
       }
     ],
     "particles kinematics":[
       {
         "language":"DAS INTERPRETER",
-        "time":0.0087740000000000005,
+        "time":0.0088229999999999992,
         "count":10
       },
       {
         "language":"LUAU",
-        "time":0.27543967000000003,
+        "time":0.27897221,
         "count":10
       },
       {
         "language":"LUA",
-        "time":0.41906599999999999,
+        "time":0.43653399999999998,
         "count":10
       },
       {
         "language":"LUAJIT -joff",
-        "time":0.26149899999999998,
+        "time":0.26111200000000001,
         "count":10
       },
       {
         "language":"QUIRREL",
-        "time":0.25693500000000002,
+        "time":0.25481199999999998,
         "count":10
       },
       {
         "language":"QUICKJS",
-        "time":0.45800000000000002,
+        "time":0.45700000000000002,
         "count":10
       },
       {
         "language":"MONO --interpreter",
-        "time":0.2438447,
+        "time":0.2442684,
         "count":10
       }
     ],
@@ -330,22 +330,22 @@
       },
       {
         "language":"LUAU",
-        "time":0.0025576700000000002,
+        "time":0.0025602899999999998,
         "count":10
       },
       {
         "language":"LUA",
-        "time":0.0014350000000000001,
+        "time":0.001446,
         "count":10
       },
       {
         "language":"LUAJIT -joff",
-        "time":0.002251,
+        "time":0.0022330000000000002,
         "count":10
       },
       {
         "language":"QUIRREL",
-        "time":0.0023800000000000002,
+        "time":0.0023809999999999999,
         "count":10
       },
       {
@@ -355,34 +355,34 @@
       },
       {
         "language":"MONO --interpreter",
-        "time":0.004908,
+        "time":0.0048966000000000001,
         "count":10
       }
     ],
     "primes loop":[
       {
         "language":"DAS INTERPRETER",
-        "time":0.022374999999999999,
+        "time":0.022345,
         "count":10
       },
       {
         "language":"LUAU",
-        "time":0.067561419999999997,
+        "time":0.067061120000000002,
         "count":10
       },
       {
         "language":"LUA",
-        "time":0.076954999999999996,
+        "time":0.076427999999999996,
         "count":10
       },
       {
         "language":"LUAJIT -joff",
-        "time":0.20103099999999999,
+        "time":0.197245,
         "count":10
       },
       {
         "language":"QUIRREL",
-        "time":0.15056700000000001,
+        "time":0.15041599999999999,
         "count":10
       },
       {
@@ -392,34 +392,34 @@
       },
       {
         "language":"MONO --interpreter",
-        "time":0.058359500000000002,
+        "time":0.058153499999999997,
         "count":10
       }
     ],
     "sort":[
       {
         "language":"DAS INTERPRETER",
-        "time":0.023567999999999999,
+        "time":0.023536000000000001,
         "count":10
       },
       {
         "language":"LUAU",
-        "time":0.04151287,
+        "time":0.04182342,
         "count":10
       },
       {
         "language":"LUA",
-        "time":0.058223999999999998,
+        "time":0.058396000000000003,
         "count":10
       },
       {
         "language":"LUAJIT -joff",
-        "time":0.055987000000000002,
+        "time":0.055967000000000003,
         "count":10
       },
       {
         "language":"QUIRREL",
-        "time":0.12723000000000001,
+        "time":0.12720500000000001,
         "count":10
       },
       {
@@ -429,108 +429,108 @@
       },
       {
         "language":"MONO --interpreter",
-        "time":0.058843100000000002,
+        "time":0.059335499999999999,
         "count":10
       }
     ],
     "tree":[
       {
         "language":"DAS INTERPRETER",
-        "time":1.6617470000000001,
+        "time":1.659017,
         "count":10
       },
       {
         "language":"LUAU",
-        "time":1.7555965,
+        "time":1.74631621,
         "count":10
       },
       {
         "language":"LUA",
-        "time":2.025865,
+        "time":2.0206780000000002,
         "count":10
       },
       {
         "language":"LUAJIT -joff",
-        "time":1.8805670000000001,
+        "time":1.85945,
         "count":10
       },
       {
         "language":"QUIRREL",
-        "time":5.2718499999999997,
+        "time":5.4279599999999997,
         "count":10
       },
       {
         "language":"QUICKJS",
-        "time":10.042,
+        "time":9.9760000000000009,
         "count":10
       },
       {
         "language":"MONO --interpreter",
-        "time":1.0845657,
+        "time":1.0890329000000001,
         "count":10
       }
     ],
     "fibonacci loop":[
       {
         "language":"DAS INTERPRETER",
-        "time":0.033348000000000003,
+        "time":0.033418999999999997,
         "count":10
       },
       {
         "language":"LUAU",
-        "time":0.089426580000000006,
+        "time":0.08956683,
         "count":10
       },
       {
         "language":"LUA",
-        "time":0.047711999999999997,
+        "time":0.047789999999999999,
         "count":10
       },
       {
         "language":"LUAJIT -joff",
-        "time":0.078617000000000006,
+        "time":0.079696000000000003,
         "count":10
       },
       {
         "language":"QUIRREL",
-        "time":0.063356999999999997,
+        "time":0.063520999999999994,
         "count":10
       },
       {
         "language":"QUICKJS",
-        "time":0.14499999999999999,
+        "time":0.14699999999999999,
         "count":10
       },
       {
         "language":"MONO --interpreter",
-        "time":0.032486000000000001,
+        "time":0.032509900000000001,
         "count":10
       }
     ],
     "float2string":[
       {
         "language":"DAS INTERPRETER",
-        "time":0.053837000000000003,
+        "time":0.053663000000000002,
         "count":10
       },
       {
         "language":"LUAU",
-        "time":0.054851789999999997,
+        "time":0.055474959999999997,
         "count":10
       },
       {
         "language":"LUA",
-        "time":0.41467900000000002,
+        "time":0.41775800000000002,
         "count":10
       },
       {
         "language":"LUAJIT -joff",
-        "time":0.15460599999999999,
+        "time":0.154445,
         "count":10
       },
       {
         "language":"QUIRREL",
-        "time":0.16680300000000001,
+        "time":0.16745099999999999,
         "count":10
       },
       {
@@ -540,34 +540,34 @@
       },
       {
         "language":"MONO --interpreter",
-        "time":1.8889562,
+        "time":1.8855194,
         "count":10
       }
     ],
     "fibonacci recursive":[
       {
         "language":"DAS INTERPRETER",
-        "time":0.045907999999999997,
+        "time":0.045765,
         "count":10
       },
       {
         "language":"LUAU",
-        "time":0.078326119999999999,
+        "time":0.078675330000000002,
         "count":10
       },
       {
         "language":"LUA",
-        "time":0.068665000000000004,
+        "time":0.068694000000000005,
         "count":10
       },
       {
         "language":"LUAJIT -joff",
-        "time":0.055565000000000003,
+        "time":0.055189000000000002,
         "count":10
       },
       {
         "language":"QUIRREL",
-        "time":0.15893299999999999,
+        "time":0.15853900000000001,
         "count":10
       },
       {
@@ -577,7 +577,7 @@
       },
       {
         "language":"MONO --interpreter",
-        "time":0.046457699999999998,
+        "time":0.046330999999999997,
         "count":10
       }
     ]
@@ -586,214 +586,214 @@
     "sha256":[
       {
         "language":"DAS AOT",
-        "time":0.0061510000000000002,
+        "time":0.006149,
         "count":10
       },
       {
         "language":"DAS JIT",
-        "time":0.0044799999999999996,
+        "time":0.0045120000000000004,
         "count":10
       },
       {
         "language":"C++",
-        "time":0.0050610000000000004,
+        "time":0.0051079999999999997,
         "count":10
       },
       {
         "language":"LUAU --codegen",
-        "time":0.33300345999999997,
+        "time":0.33223571000000002,
         "count":10
       },
       {
         "language":"LUAJIT",
-        "time":0.015594999999999999,
+        "time":0.015384,
         "count":10
       },
       {
         "language":"MONO",
-        "time":0.0322181,
+        "time":0.0326264,
         "count":10
       },
       {
         "language":".NET",
-        "time":0.016053000000000001,
+        "time":0.016494000000000002,
         "count":10
       }
     ],
     "dictionary":[
       {
         "language":"DAS AOT",
-        "time":0.011667,
+        "time":0.012154,
         "count":10
       },
       {
         "language":"DAS JIT",
-        "time":0.011471,
+        "time":0.011637,
         "count":10
       },
       {
         "language":"C++",
-        "time":0.033335999999999998,
+        "time":0.031886999999999999,
         "count":10
       },
       {
         "language":"LUAU --codegen",
-        "time":0.02580704,
+        "time":0.024465830000000001,
         "count":10
       },
       {
         "language":"LUAJIT",
-        "time":0.0076090000000000003,
+        "time":0.007986,
         "count":10
       },
       {
         "language":"MONO",
-        "time":0.089848800000000006,
+        "time":0.092023099999999997,
         "count":10
       },
       {
         "language":".NET",
-        "time":0.036521499999999998,
+        "time":0.035207799999999997,
         "count":10
       }
     ],
     "n-bodies":[
       {
         "language":"DAS AOT",
-        "time":0.022452,
+        "time":0.022459,
         "count":10
       },
       {
         "language":"DAS JIT",
-        "time":0.013759,
+        "time":0.013847,
         "count":10
       },
       {
         "language":"C++",
-        "time":0.024778000000000001,
+        "time":0.024785000000000001,
         "count":10
       },
       {
         "language":"LUAU --codegen",
-        "time":0.24085196,
+        "time":0.24270496,
         "count":10
       },
       {
         "language":"LUAJIT",
-        "time":0.051783999999999997,
+        "time":0.052139999999999999,
         "count":10
       },
       {
         "language":"MONO",
-        "time":0.083266800000000002,
+        "time":0.083842,
         "count":10
       },
       {
         "language":".NET",
-        "time":0.0271816,
+        "time":0.027049199999999999,
         "count":10
       }
     ],
     "spectral norm":[
       {
         "language":"DAS AOT",
-        "time":0.0088310000000000003,
+        "time":0.0088439999999999994,
         "count":10
       },
       {
         "language":"DAS JIT",
-        "time":0.0031580000000000002,
+        "time":0.00316,
         "count":10
       },
       {
         "language":"C++",
-        "time":0.0090539999999999995,
+        "time":0.0091059999999999995,
         "count":10
       },
       {
         "language":"LUAU --codegen",
-        "time":0.042284250000000002,
+        "time":0.042218289999999999,
         "count":10
       },
       {
         "language":"LUAJIT",
-        "time":0.012208,
+        "time":0.012239999999999999,
         "count":10
       },
       {
         "language":"MONO",
-        "time":0.033698100000000002,
+        "time":0.034274499999999999,
         "count":10
       },
       {
         "language":".NET",
-        "time":0.0095703999999999997,
+        "time":0.0096507999999999993,
         "count":10
       }
     ],
     "native loop":[
       {
         "language":"DAS AOT",
-        "time":0.012765,
+        "time":0.012605,
         "count":10
       },
       {
         "language":"DAS JIT",
-        "time":0.0065839999999999996,
+        "time":0.0063920000000000001,
         "count":10
       },
       {
         "language":"MONO",
-        "time":0.080365599999999995,
+        "time":0.080544500000000005,
         "count":10
       },
       {
         "language":".NET",
-        "time":0.012807199999999999,
+        "time":0.012768399999999999,
         "count":10
       }
     ],
     "mandelbrot":[
       {
         "language":"DAS AOT",
-        "time":0.00057700000000000004,
+        "time":0.00056400000000000005,
         "count":10
       },
       {
         "language":"DAS JIT",
-        "time":0.00046799999999999999,
+        "time":0.00045899999999999999,
         "count":10
       },
       {
         "language":"C++",
-        "time":0.00057799999999999995,
+        "time":0.00058100000000000003,
         "count":10
       },
       {
         "language":"LUAU --codegen",
-        "time":0.023760460000000001,
+        "time":0.023782709999999999,
         "count":10
       },
       {
         "language":"LUAJIT",
-        "time":0.0057159999999999997,
+        "time":0.005574,
         "count":10
       },
       {
         "language":"MONO",
-        "time":0.0018984,
+        "time":0.0018985,
         "count":10
       },
       {
         "language":".NET",
-        "time":0.0005555,
+        "time":0.0005597,
         "count":10
       }
     ],
     "exp loop":[
       {
         "language":"DAS AOT",
-        "time":0.0040099999999999997,
+        "time":0.0040540000000000003,
         "count":10
       },
       {
@@ -803,360 +803,360 @@
       },
       {
         "language":"C++",
-        "time":0.001709,
+        "time":0.0017110000000000001,
         "count":10
       },
       {
         "language":"LUAU --codegen",
-        "time":0.0051460400000000002,
+        "time":0.0051774999999999998,
         "count":10
       },
       {
         "language":"LUAJIT",
-        "time":0.0023679999999999999,
+        "time":0.0024069999999999999,
         "count":10
       },
       {
         "language":"MONO",
-        "time":0.0069160999999999997,
+        "time":0.0069474000000000003,
         "count":10
       },
       {
         "language":".NET",
-        "time":0.0025907999999999999,
+        "time":0.0025917000000000002,
         "count":10
       }
     ],
     "string2float":[
       {
         "language":"DAS AOT",
-        "time":0.014657999999999999,
+        "time":0.014813,
         "count":10
       },
       {
         "language":"DAS JIT",
-        "time":0.014494,
+        "time":0.014481000000000001,
         "count":10
       },
       {
         "language":"C++",
-        "time":0.015883000000000001,
+        "time":0.015896,
         "count":10
       },
       {
         "language":"LUAU --codegen",
-        "time":0.019428669999999999,
+        "time":0.019588879999999999,
         "count":10
       },
       {
         "language":"LUAJIT",
-        "time":0.14570900000000001,
+        "time":0.14768999999999999,
         "count":10
       },
       {
         "language":"MONO",
-        "time":0.1181902,
+        "time":0.1182005,
         "count":10
       },
       {
         "language":".NET",
-        "time":0.038697000000000002,
+        "time":0.0386272,
         "count":10
       }
     ],
     "particles kinematics":[
       {
         "language":"DAS AOT",
-        "time":0.0033960000000000001,
+        "time":0.0034009999999999999,
         "count":10
       },
       {
         "language":"DAS JIT",
-        "time":0.0034169999999999999,
+        "time":0.0033999999999999998,
         "count":10
       },
       {
         "language":"C++",
-        "time":0.0033760000000000001,
+        "time":0.0033600000000000001,
         "count":10
       },
       {
         "language":"LUAU --codegen",
-        "time":0.13762408000000001,
+        "time":0.14669629000000001,
         "count":10
       },
       {
         "language":"LUAJIT",
-        "time":0.050389999999999997,
+        "time":0.044470000000000003,
         "count":10
       },
       {
         "language":"MONO",
-        "time":0.047589399999999997,
+        "time":0.047528599999999997,
         "count":10
       },
       {
         "language":".NET",
-        "time":0.0055560000000000002,
+        "time":0.0056496999999999997,
         "count":10
       }
     ],
     "queen":[
       {
         "language":"DAS AOT",
-        "time":9.5000000000000005e-05,
+        "time":9.6000000000000002e-05,
         "count":100
       },
       {
         "language":"DAS JIT",
-        "time":5.3999999999999998e-05,
+        "time":5.5000000000000002e-05,
         "count":100
       },
       {
         "language":"C++",
-        "time":4.1999999999999998e-05,
+        "time":4.1e-05,
         "count":100
       },
       {
         "language":"LUAU --codegen",
-        "time":0.00074408000000000005,
+        "time":0.00074646000000000001,
         "count":10
       },
       {
         "language":"LUAJIT",
-        "time":0.00021699999999999999,
+        "time":0.00019900000000000001,
         "count":10
       },
       {
         "language":"MONO",
-        "time":0.00061830000000000001,
+        "time":0.00061839999999999996,
         "count":10
       },
       {
         "language":".NET",
-        "time":0.00069899999999999997,
+        "time":0.00073050000000000003,
         "count":10
       }
     ],
     "primes loop":[
       {
         "language":"DAS AOT",
-        "time":0.0062960000000000004,
+        "time":0.0062890000000000003,
         "count":10
       },
       {
         "language":"DAS JIT",
-        "time":0.006875,
+        "time":0.00696,
         "count":10
       },
       {
         "language":"C++",
-        "time":0.0070790000000000002,
+        "time":0.0070229999999999997,
         "count":10
       },
       {
         "language":"LUAU --codegen",
-        "time":0.039515130000000002,
+        "time":0.039414249999999998,
         "count":10
       },
       {
         "language":"LUAJIT",
-        "time":0.016889000000000001,
+        "time":0.016546000000000002,
         "count":10
       },
       {
         "language":"MONO",
-        "time":0.026251500000000001,
+        "time":0.0257042,
         "count":10
       },
       {
         "language":".NET",
-        "time":0.0086993999999999995,
+        "time":0.0085015000000000004,
         "count":10
       }
     ],
     "sort":[
       {
         "language":"DAS AOT",
-        "time":0.0043819999999999996,
+        "time":0.0044710000000000001,
         "count":10
       },
       {
         "language":"DAS JIT",
-        "time":0.0054900000000000001,
+        "time":0.0056090000000000003,
         "count":10
       },
       {
         "language":"C++",
-        "time":0.0043470000000000002,
+        "time":0.0044279999999999996,
         "count":10
       },
       {
         "language":"LUAU --codegen",
-        "time":0.03670354,
+        "time":0.036842130000000001,
         "count":10
       },
       {
         "language":"LUAJIT",
-        "time":0.050056999999999997,
+        "time":0.050097999999999997,
         "count":10
       },
       {
         "language":"MONO",
-        "time":0.0099375000000000002,
+        "time":0.0100944,
         "count":10
       },
       {
         "language":".NET",
-        "time":0.0090200999999999996,
+        "time":0.0090059000000000007,
         "count":10
       }
     ],
     "tree":[
       {
         "language":"DAS AOT",
-        "time":0.144122,
+        "time":0.14341799999999999,
         "count":10
       },
       {
         "language":"DAS JIT",
-        "time":0.15806200000000001,
+        "time":0.15700800000000001,
         "count":10
       },
       {
         "language":"C++",
-        "time":0.14380799999999999,
+        "time":0.142762,
         "count":10
       },
       {
         "language":"LUAU --codegen",
-        "time":1.11148158,
+        "time":1.1118241200000001,
         "count":10
       },
       {
         "language":"LUAJIT",
-        "time":0.73088500000000001,
+        "time":0.74092100000000005,
         "count":10
       },
       {
         "language":"MONO",
-        "time":0.2051521,
+        "time":0.20563970000000001,
         "count":10
       },
       {
         "language":".NET",
-        "time":0.2240607,
+        "time":0.2252219,
         "count":10
       }
     ],
     "fibonacci loop":[
       {
         "language":"DAS AOT",
-        "time":0.0020179999999999998,
+        "time":0.002055,
         "count":10
       },
       {
         "language":"DAS JIT",
-        "time":0.002075,
+        "time":0.002062,
         "count":10
       },
       {
         "language":"C++",
-        "time":0.0020170000000000001,
+        "time":0.0020560000000000001,
         "count":10
       },
       {
         "language":"LUAU --codegen",
-        "time":0.023450579999999999,
+        "time":0.023567040000000001,
         "count":10
       },
       {
         "language":"LUAJIT",
-        "time":0.010232,
+        "time":0.010315,
         "count":10
       },
       {
         "language":"MONO",
-        "time":0.0020555,
+        "time":0.0020604999999999998,
         "count":10
       },
       {
         "language":".NET",
-        "time":0.0042994000000000001,
+        "time":0.0044183,
         "count":10
       }
     ],
     "float2string":[
       {
         "language":"DAS AOT",
-        "time":0.075989000000000001,
+        "time":0.076211000000000001,
         "count":10
       },
       {
         "language":"DAS JIT",
-        "time":0.046698999999999997,
+        "time":0.046425000000000001,
         "count":10
       },
       {
         "language":"C++",
-        "time":0.152168,
+        "time":0.15202599999999999,
         "count":10
       },
       {
         "language":"LUAU --codegen",
-        "time":0.053022710000000001,
+        "time":0.05284821,
         "count":10
       },
       {
         "language":"LUAJIT",
-        "time":0.144423,
+        "time":0.14402699999999999,
         "count":10
       },
       {
         "language":"MONO",
-        "time":0.41313339999999998,
+        "time":0.4121956,
         "count":10
       },
       {
         "language":".NET",
-        "time":0.068345600000000006,
+        "time":0.068169400000000005,
         "count":10
       }
     ],
     "fibonacci recursive":[
       {
         "language":"DAS AOT",
-        "time":0.0039849999999999998,
+        "time":0.0040249999999999999,
         "count":10
       },
       {
         "language":"DAS JIT",
-        "time":0.0036259999999999999,
+        "time":0.0036250000000000002,
         "count":10
       },
       {
         "language":"C++",
-        "time":0.0039839999999999997,
+        "time":0.0039880000000000002,
         "count":10
       },
       {
         "language":"LUAU --codegen",
-        "time":0.036760290000000001,
+        "time":0.036798249999999998,
         "count":10
       },
       {
         "language":"LUAJIT",
-        "time":0.0066779999999999999,
+        "time":0.0066680000000000003,
         "count":10
       },
       {
         "language":"MONO",
-        "time":0.0059154999999999998,
+        "time":0.0058788,
         "count":10
       },
       {
         "language":".NET",
-        "time":0.0045510000000000004,
+        "time":0.0045173000000000001,
         "count":10
       }
     ]

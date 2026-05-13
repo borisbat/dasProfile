@@ -13,10 +13,10 @@ local tab = {}
 local src = {}
 local n = 500000
 local modn = n
-for i = 1, n do
+for i = 0, n - 1 do
     --local num = math.random(1,modn) * 271828183
     local num = bit32.bxor(271828183, i*119)%modn
-    table.insert(src, string.format("_%d", num))
+  table.insert(src, string.format("%d", num))
 end
 
 function profile_it(profiles, fn)
