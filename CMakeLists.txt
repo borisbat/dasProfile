@@ -118,7 +118,15 @@ if (NOT luau_src_POPULATED)
 endif()
 
 set(LUAU_BUILD_CLI ON CACHE BOOL "" FORCE)
-set(LUAU_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+# LUAU_BUILD_TESTS must be ON despite us not consuming Luau test artifacts:
+# upstream Luau 0.720 CMakeLists.txt has a gating bug where
+# `set_target_properties(Luau.UnitTest LINK_FLAGS_DEBUG ...)` at line 225 is
+# wrapped in `if(MSVC AND LUAU_BUILD_CLI)` while `add_executable(Luau.UnitTest)`
+# at line 75 is wrapped in `if(LUAU_BUILD_TESTS)`. With CLI=ON + TESTS=OFF on
+# MSVC, the property setter fires against a missing target → configure error.
+# Setting TESTS=ON makes the target exist; cost is one extra Luau test exe
+# build (~30s). Revisit when upstream fixes the gate.
+set(LUAU_BUILD_TESTS ON CACHE BOOL "" FORCE)
 set(LUAU_BUILD_WEB OFF CACHE BOOL "" FORCE)
 set(LUAU_WERROR OFF CACHE BOOL "" FORCE)
 add_subdirectory(${luau_src_SOURCE_DIR} ${luau_src_BINARY_DIR} EXCLUDE_FROM_ALL)
@@ -132,11 +140,14 @@ add_custom_target(stageProfileLuau ALL
     COMMENT "Staging Luau interpreter into SDK examples/profile/tests/luau"
 )
 
-set(QUIRREL_GIT_TAG "dec4877")
+# Quirrel pinned to an arbitrary commit (not on a tag or branch). GIT_SHALLOW
+# requires a branch/tag ref — `git fetch --depth=1 <sha>` is rejected by the
+# server unless it sets uploadpack.allowAnySHA1InWant=true (GitHub does not).
+# Drop GIT_SHALLOW so the full repo is cloned and then checked out at the SHA.
+set(QUIRREL_GIT_TAG "dec4877203e5cd374658c9cfe7e1553b22140920")
 FetchContent_Declare(quirrel_src
     GIT_REPOSITORY https://github.com/GaijinEntertainment/quirrel.git
     GIT_TAG ${QUIRREL_GIT_TAG}
-    GIT_SHALLOW TRUE
 )
 FetchContent_GetProperties(quirrel_src)
 if (NOT quirrel_src_POPULATED)
@@ -296,14 +307,26 @@ foreach(cfg DEBUG RELEASE RELWITHDEBINFO MINSIZEREL)
 endforeach()
 
 # testProfile dynamic module (loadable via .das_module descriptor).
-add_library(testProfile MODULE
+#
+# Built as SHARED (not MODULE) so testProfileAot can link against testProfile's
+# import lib on Windows (CMake refuses target_link_libraries against MODULE
+# targets). On Apple/Linux the artifact is the same .dylib/.so either way;
+# nothing about how daslang.exe dlopens .shared_module changes.
+add_library(testProfile SHARED
     ${CMAKE_CURRENT_SOURCE_DIR}/test_profile.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_profile.h
 )
 
 target_compile_features(testProfile PRIVATE cxx_std_17)
 target_compile_definitions(testProfile PRIVATE DAS_MOD_EXPORTS DAS_ENABLE_DLL=1 DAS_ENABLE_DYN_INCLUDES=1)
-target_link_libraries(testProfile PRIVATE DAS::libDaScript Threads::Threads)
+# testProfile is a .shared_module loaded by daslang.exe at runtime. daslang.exe
+# is linked against libDaScriptDyn.dll, which is the source of truth for daslang
+# symbols. The .cpp compiles with DAS_ENABLE_DLL=1 → all das::* references are
+# marked __declspec(dllimport), so we MUST link against the DLL import lib
+# (libDaScriptDyn), not the static archive (libDaScript). Mismatching them
+# produces "unresolved external __imp_*" link errors. testProfileAot below
+# already uses libDaScriptDyn — keep them aligned.
+target_link_libraries(testProfile PRIVATE DAS::libDaScriptDyn Threads::Threads)
 target_include_directories(testProfile PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 if (NOT MSVC)
@@ -411,7 +434,19 @@ add_library(testProfileAot MODULE
 )
 
 target_compile_features(testProfileAot PRIVATE cxx_std_17)
-target_compile_definitions(testProfileAot PRIVATE DAS_MOD_EXPORTS DAS_ENABLE_DLL=1 DAS_ENABLE_DYN_INCLUDES=1)
+# NOTE: no DAS_MOD_EXPORTS here. With DAS_MOD_EXPORTS=1 the test_profile.h
+# declarations (DAS_MOD_API int AddOne(int), testFibI, testFibR, ...) become
+# __declspec(dllexport) in this TU's view — and the linker then expects this
+# module to define them. Those bodies live in testProfile.shared_module, not
+# here (see the comment further down). On Apple/Linux the deferred-resolution
+# trick (`-undefined dynamic_lookup` on Apple, permissive shared-lib default on
+# Linux) papers over the gap; on Windows the linker hard-errors. Leaving
+# DAS_MOD_EXPORTS undefined flips DAS_MOD_API to dllimport, and the explicit
+# Windows link against testProfile.lib below resolves the imports through
+# testProfile.shared_module. DAS_ENABLE_DLL=1 still gates REGISTER_DYN_MODULE's
+# `extern "C" DAS_EXPORT_DLL register_dyn_testProfileAot`, which is what
+# daslang.exe looks up via GetProcAddress at register-time.
+target_compile_definitions(testProfileAot PRIVATE DAS_ENABLE_DLL=1 DAS_ENABLE_DYN_INCLUDES=1)
 target_link_libraries(testProfileAot PRIVATE DAS::libDaScriptDyn Threads::Threads)
 target_include_directories(testProfileAot PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -439,6 +474,15 @@ endif()
 # resolutions to dlopen so we don't duplicate test_profile.cpp here.
 if (APPLE)
     target_link_options(testProfileAot PRIVATE "-undefined" "dynamic_lookup")
+endif()
+if (WIN32)
+    # Windows has no `-undefined dynamic_lookup` equivalent — PE/COFF demands
+    # all imports be declared at link time. Link testProfileAot against
+    # testProfile's import lib so MSVC resolves the AddOne/testFibI/testFibR/...
+    # references emitted by the AOT-generated cpps. The runtime loader then
+    # binds those imports to testProfile.shared_module (registered alongside
+    # testProfileAot via the shared .das_module descriptor).
+    target_link_libraries(testProfileAot PRIVATE testProfile)
 endif()
 
 set_target_properties(testProfileAot PROPERTIES
