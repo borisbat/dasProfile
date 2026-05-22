@@ -440,13 +440,29 @@ def make_entries {
     // Forward the parent's daslang invocation (exe + flags like -jit + script path),
     // but drop the `--` separator and script-side args (anything after `--`).
     var parts : array<string>
+    var hasJit = false
+    var hasNoCache = false
     for (arg in get_command_line_arguments()) {
         if (arg == "--") break
+        if (arg == "-jit") {
+            hasJit = true
+        }
+        if (arg == "-jit-no-cache") {
+            hasNoCache = true
+        }
         if (ends_with(arg, ".das") && !starts_with(arg, "-") && !starts_with(arg, "/")) {
             parts |> push("{getcwd()}/{arg}")
         } else {
             parts |> push(arg)
         }
+    }
+    // Inject -jit-no-cache when parent runs -jit but didn't pass it. Workaround
+    // for GaijinEntertainment/daScript#2802 — on Windows the per-script JIT
+    // DLL cache writes absolute target addresses into the emitted machine code;
+    // ASLR moves DLL bases between runs so a cache-hit DLL crashes when loaded
+    // back. -jit-no-cache bypasses the cache and runs in-memory codegen.
+    if (hasJit && !hasNoCache && get_platform_name() == "windows") {
+        parts |> push("-jit-no-cache")
     }
     if (empty(parts)) {
         print("Error: empty command line\n")
