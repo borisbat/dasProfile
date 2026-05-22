@@ -16,9 +16,19 @@ def native_executable(path_no_ext : string) {
     return get_platform_name() == "windows" ? "{path_no_ext}.exe" : path_no_ext
 }
 
+// Normalize forward-slash paths to backslash on Windows. popen on Windows
+// runs the command through cmd.exe; even when wrapped in outer double quotes,
+// cmd parses `D:/foo/bar.exe` as a drive change followed by a switch and
+// errors with "The filename, directory name, or volume label syntax is
+// incorrect." Backslash-normalized paths survive the cmd parse intact.
+[no_jit, no_aot]
+def to_native_path(p : string) {
+    return get_platform_name() == "windows" ? (p |> replace("/", "\\")) : p
+}
+
 [no_jit, no_aot]
 def shell_quote(path : string) {
-    return "\"{path}\""
+    return "\"{to_native_path(path)}\""
 }
 
 [no_jit, no_aot]
@@ -185,17 +195,24 @@ def run_files(tf : TestFile) {
         let monoCompiler = "mcs"
         let monoRunner = "mono"
         let monoLibrary = "{monoRuntimeRoot}/{csharp_shared_library_name("addOne")}"
-        let monoLibraryEnv = "DYLD_LIBRARY_PATH={shell_quote(monoRuntimeRoot)} LD_LIBRARY_PATH={shell_quote(monoRuntimeRoot)}"
+        // DYLD_LIBRARY_PATH / LD_LIBRARY_PATH are POSIX-only. On Windows the
+        // prefix-VAR=VAL command-line shell syntax doesn't parse — `cmd.exe`
+        // sees `'DYLD_LIBRARY_PATH' is not recognized as an internal or
+        // external command`. Windows Mono finds native deps via PATH (or
+        // sibling-DLL search) and doesn't need either env var.
+        let monoLibraryEnv = (get_platform_name() == "windows"
+            ? ""
+            : "DYLD_LIBRARY_PATH={shell_quote(monoRuntimeRoot)} LD_LIBRARY_PATH={shell_quote(monoRuntimeRoot)} ")
         let monoSource = "{monoSourceRoot}/{tf.monoFile}"
         let cwd = getcwd()
         chdir(monoSourceRoot)
         run_and_gun_silent("{monoCompiler} -optimize+ {monoSource} -out:test.exe")
         if (TEST_MONO_INTERPRETER) {
-            let monoInterpreterCommand = stat(monoLibrary).is_valid ? "{monoLibraryEnv} {monoRunner} --interpreter test.exe" : "{monoRunner} --interpreter test.exe"
+            let monoInterpreterCommand = stat(monoLibrary).is_valid ? "{monoLibraryEnv}{monoRunner} --interpreter test.exe" : "{monoRunner} --interpreter test.exe"
             run_and_gun("MONO --interpreter", monoInterpreterCommand)
         }
         if (stat(monoLibrary).is_valid) {
-            run_and_gun("MONO", "{monoLibraryEnv} {monoRunner} test.exe")
+            run_and_gun("MONO", "{monoLibraryEnv}{monoRunner} test.exe")
         } else {
             run_and_gun("MONO", "{monoRunner} test.exe")
         }
@@ -208,13 +225,16 @@ def run_files(tf : TestFile) {
         let dotnetProject = "{cscSourceRoot}/dasprofile_bench.csproj"
         let dotnetOutput = "{cscSourceRoot}/.dotnet-bench"
         let dotnetLibrary = "{cscRuntimeRoot}/{csharp_shared_library_name("addOne")}"
-        let dotnetLibraryEnv = "DYLD_LIBRARY_PATH={shell_quote(dotnetOutput)}:{shell_quote(cscRuntimeRoot)} LD_LIBRARY_PATH={shell_quote(dotnetOutput)}:{shell_quote(cscRuntimeRoot)}"
+        // Same Windows-skip as Mono above: DYLD/LD env vars don't apply.
+        let dotnetLibraryEnv = (get_platform_name() == "windows"
+            ? ""
+            : "DYLD_LIBRARY_PATH={shell_quote(dotnetOutput)}:{shell_quote(cscRuntimeRoot)} LD_LIBRARY_PATH={shell_quote(dotnetOutput)}:{shell_quote(cscRuntimeRoot)} ")
         let dotnetSource = "{cscSourceRoot}/{tf.dotNetFile}"
         let dotnetAssembly = "{dotnetOutput}/bench.dll"
         let cwd = getcwd()
         chdir(cscSourceRoot)
         run_and_gun_silent("{shell_quote(dotnetRunner)} build {shell_quote(dotnetProject)} -c Release -nologo -clp:ErrorsOnly -p:BenchmarkSource={shell_quote(dotnetSource)} -p:NativeLibrary={shell_quote(dotnetLibrary)} -o {shell_quote(dotnetOutput)}")
-        run_and_gun(".NET", "{dotnetLibraryEnv} {shell_quote(dotnetRunner)} {shell_quote(dotnetAssembly)}")
+        run_and_gun(".NET", "{dotnetLibraryEnv}{shell_quote(dotnetRunner)} {shell_quote(dotnetAssembly)}")
         chdir(cwd)
     }
 }

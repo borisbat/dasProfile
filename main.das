@@ -191,10 +191,65 @@ def first_nonempty_command_line(cmd : string) {
     return result
 }
 
+// Strip marketing noise from raw CPU brand strings so the daslang.io cycler
+// row and the README headings stay readable. Single source of truth: trim
+// here, every downstream consumer sees a clean value.
+//
+// Cases handled:
+//   "Apple M1 Max"                                       → unchanged
+//   "AMD Ryzen Threadripper 3990X 64-Core Processor"     → "AMD Ryzen Threadripper 3990X"
+//   "Intel(R) Core(TM) i9-9900K CPU @ 3.60GHz"           → "Intel Core i9-9900K"
+//   "AMD Ryzen 9 7950X"                                  → unchanged
+def private collapse_spaces(s : string) {
+    var out = s
+    while (out |> find("  ") != -1) {
+        out = out |> replace("  ", " ")
+    }
+    return out
+}
+
+def private strip_cpu_clock_suffix(s : string) : string {
+    // Drop "<space>CPU @ X.YGHz" tail (and stray "GHz" units).
+    let cpuAt = s |> find(" CPU @ ")
+    if (cpuAt != -1) return s |> slice(0, cpuAt)
+    return s
+}
+
+def private strip_core_count_suffix(s : string) : string {
+    // Drop "<space>NN-Core Processor" / "<space>Processor" tail.
+    let p = s |> find("-Core Processor")
+    if (p != -1) {
+        // walk back past the digit run + the leading space
+        var cut = p
+        peek_data(s) $(arr) {
+            var i = p - 1
+            while (i >= 0 && int(arr[i]) >= int(0x30) /* '0' */ && int(arr[i]) <= int(0x39) /* '9' */) {
+                i -= 1
+            }
+            if (i >= 0 && int(arr[i]) == int(0x20) /* space */) {
+                cut = i
+            }
+        }
+        if (cut != p) return s |> slice(0, cut)
+    }
+    if (s |> ends_with(" Processor")) return s |> slice(0, length(s) - length(" Processor"))
+    return s
+}
+
+def private trim_cpu_marketing(raw : string) {
+    var out = raw |> trim()
+    out = out |> replace("(R)", "")
+    out = out |> replace("(TM)", "")
+    out = strip_cpu_clock_suffix(out)
+    out = strip_core_count_suffix(out)
+    out = collapse_spaces(out)
+    return out |> trim()
+}
+
 def get_cpu_name {
     let platform = get_platform_name()
     if (platform == "darwin") {
-        return first_nonempty_command_line("sysctl -n machdep.cpu.brand_string 2>/dev/null")
+        return trim_cpu_marketing(first_nonempty_command_line("sysctl -n machdep.cpu.brand_string 2>/dev/null"))
     } elif (platform == "linux") {
         var cpuName : string
         unsafe {
@@ -208,7 +263,7 @@ def get_cpu_name {
                 }
             }
         }
-        if (!empty(cpuName)) return cpuName
+        if (!empty(cpuName)) return trim_cpu_marketing(cpuName)
         unsafe {
             popen("cat /proc/cpuinfo 2>/dev/null") $(f) {
                 while (!feof(f)) {
@@ -220,7 +275,7 @@ def get_cpu_name {
                 }
             }
         }
-        return cpuName
+        return trim_cpu_marketing(cpuName)
     } elif (platform == "windows") {
         var cpuName : string
         unsafe {
@@ -237,7 +292,7 @@ def get_cpu_name {
                 }
             }
         }
-        return cpuName
+        return trim_cpu_marketing(cpuName)
     }
     return platform
 }
@@ -439,6 +494,7 @@ struct private ResultEntry {
 
 struct private Report {
     cpu       : string
+    platform  : string  // "darwin" / "linux" / "windows" — drives per-platform sections in README and the daslang.io cycler
     timestamp : string
     versions  : VersionInfo
     @rename = "Interpreted"
@@ -497,12 +553,18 @@ def make_json_output(cpu_name : string; version_info : VersionInfo) {
 
     let report = Report(
         cpu = cpu_name,
+        platform = get_platform_name(),
         timestamp = "{get_clock()}",
         versions = version_info,
         interpreted <- collect(interpreted_languages, entries),
         aot_or_jit  <- collect(aot_jit_languages, entries))
 
-    let output_file = "profile_results.json"
+    // Platform-suffixed file lets multiple captures coexist in the repo
+    // (profile_results_darwin.json, profile_results_windows.json, ...).
+    // The README generator (update_readme_benchmarks.py) globs all of these
+    // for per-platform sections; daslang.io's playground cycler fetches them
+    // by suffix too.
+    let output_file = "profile_results_{get_platform_name()}.json"
     unsafe {
         fopen(output_file, "w") $(f) {
             fwrite(f, sprint_json(report, true))
