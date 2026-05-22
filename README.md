@@ -6,16 +6,17 @@ This repository contains cross-language benchmark suites comparing daslang again
 
 ## Benchmark Snapshot
 
+Per-platform captures. Lower is better. The fastest result in each row is in bold. `-` means no value for that runtime on that benchmark.
+
+### macOS — Apple M1 Max
+
 Platform information:
 
-- macOS on Apple M1 Max
-- Captured from `profile_results.json` on Wed May 13 02:48:38 2026
+- Captured from `profile_results_darwin.json` on Wed May 13 02:48:38 2026
 - Toolchain: AppleClang 21.0.0.21000101, daslang 0.6.2, LLVM 22.1.5
 - Runtimes: Lua 5.5.0, LuaJIT 2.1.1774896198, Luau 0.720, Mono 6.14.1 (tarball Tue Apr 29 17:43:02 UTC 2025), .NET 10.0.300, QuickJS 2025-09-13, Quirrel 4.20.0
 
-Lower is better. The fastest result in each row is in bold. `-` means no value for that runtime on that benchmark.
-
-### Interpreted
+#### Interpreted
 
 | Test | DAS interpreter | Luau | Lua | LuaJIT -joff | Quirrel | QuickJS | Mono --interpreter |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -36,7 +37,7 @@ Lower is better. The fastest result in each row is in bold. `-` means no value f
 | float2string | **0.053663s** | 0.055475s | 0.417758s | 0.154445s | 0.167451s | 0.272000s | 1.885519s |
 | fibonacci recursive | **0.045765s** | 0.078675s | 0.068694s | 0.055189s | 0.158539s | 0.108000s | 0.046331s |
 
-### AOT or JIT
+#### AOT or JIT
 
 | Test | DAS AOT | DAS JIT | C++ | Luau --codegen | LuaJIT | Mono | .NET |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -56,6 +57,56 @@ Lower is better. The fastest result in each row is in bold. `-` means no value f
 | fibonacci loop | **0.002055s** | 0.002062s | 0.002056s | 0.023567s | 0.010315s | 0.002060s | 0.004418s |
 | float2string | 0.076211s | **0.046425s** | 0.152026s | 0.052848s | 0.144027s | 0.412196s | 0.068169s |
 | fibonacci recursive | 0.004025s | **0.003625s** | 0.003988s | 0.036798s | 0.006668s | 0.005879s | 0.004517s |
+
+### Windows — AMD Ryzen Threadripper 3990X
+
+Platform information:
+
+- Captured from `profile_results_windows.json` on Thu May 21 20:42:10 2026
+- Toolchain: MSVC 19.44.35213.0, daslang 0.6.2, LLVM 22.1.5
+- Runtimes: Lua 5.5.0, LuaJIT 2.1.1774896198, Luau 0.720, Mono 6.12.0 (Visual Studio built mono), .NET 10.0.300, QuickJS 2025-09-13-2, Quirrel 4.20.0
+
+#### Interpreted
+
+| Test | DAS interpreter | Luau | Lua | LuaJIT -joff | Quirrel | QuickJS | Mono --interpreter |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| sha256 | **0.130332s** | 0.687455s | 5.352000s | 0.283000s | 1.217000s | 1.760000s | 0.921810s |
+| dictionary | 0.031011s | 0.070430s | 0.079000s | **0.020000s** | 0.124000s | 0.117000s | 1.419307s |
+| n-bodies | **0.252342s** | 0.692332s | 1.301000s | 0.566000s | 2.195000s | 2.523000s | 1.170782s |
+| mandelbrot | **0.003502s** | 0.056507s | 0.163000s | 0.061000s | 0.009000s | 0.011000s | 0.026322s |
+| spectral norm | 0.261329s | **0.246158s** | 0.526000s | 0.301000s | 1.177000s | 1.217000s | 0.442763s |
+| native loop | **0.040464s** | - | - | - | - | - | 1.483034s |
+| exp loop | **0.016485s** | 0.019894s | 0.054000s | 0.020000s | 0.082000s | 0.101000s | 0.373885s |
+| string2float | **0.036510s** | 0.129156s | 0.230000s | 0.133000s | 0.136000s | 0.229000s | 5.295611s |
+| particles kinematics | **0.015327s** | 0.397377s | 1.565000s | 0.308000s | 0.988000s | 1.485000s | 0.663254s |
+| queen | 0.001546s | 0.001655s | 0.002000s | **0.001000s** | 0.004000s | 0.005000s | 0.012357s |
+| fibonacci loop | **0.034292s** | 0.058317s | 0.075000s | 0.045000s | 0.080000s | 0.258000s | 0.134193s |
+| primes loop | **0.051745s** | 0.094586s | 0.088000s | 0.069000s | 0.244000s | 0.209000s | 0.157043s |
+| sort | **0.020711s** | 0.055223s | 0.108000s | 0.075000s | 0.243000s | 0.069000s | 0.303710s |
+| tree | 2.060448s | 1.755788s | 3.053000s | **1.526000s** | 8.645000s | 15.827000s | 1.938141s |
+| float2string | 0.108651s | **0.077451s** | 0.777000s | 0.190000s | 0.313000s | 0.537000s | 5.798777s |
+| fibonacci recursive | **0.035519s** | 0.086269s | 0.095000s | 0.061000s | 0.232000s | 0.205000s | 0.113130s |
+
+#### AOT or JIT
+
+| Test | DAS AOT | DAS JIT | C++ | Luau --codegen | LuaJIT | Mono | .NET |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| sha256 | 0.021177s | - | **0.004378s** | 0.559652s | 0.024000s | 0.046050s | 0.015837s |
+| dictionary | 0.021932s | - | 0.049704s | 0.054431s | **0.018000s** | 0.101639s | 0.070682s |
+| n-bodies | 0.145492s | - | **0.038966s** | 0.227649s | 0.083000s | 0.084110s | 0.039229s |
+| mandelbrot | **0.000524s** | - | 0.000580s | 0.038779s | 0.007000s | 0.004613s | 0.000601s |
+| spectral norm | 0.012611s | - | **0.012507s** | 0.055903s | 0.014000s | 0.027377s | 0.013166s |
+| native loop | **0.012583s** | - | - | - | - | 0.140037s | 0.079436s |
+| exp loop | 0.007338s | - | **0.003367s** | 0.007796s | 0.005000s | 0.011004s | 0.006361s |
+| string2float | **0.030351s** | - | 0.096921s | 0.117569s | 0.111000s | 0.162062s | 0.053165s |
+| particles kinematics | **0.003251s** | - | 0.006314s | 0.199811s | 0.203000s | 0.093121s | 0.007610s |
+| queen | 0.000138s | - | 0.000119s | 0.000806s | **0.000000s** | 0.000779s | 0.000996s |
+| fibonacci loop | 0.002393s | - | **0.001611s** | 0.030883s | 0.004000s | 0.002295s | 0.001956s |
+| primes loop | 0.013850s | - | 0.040521s | 0.033766s | **0.013000s** | 0.039126s | 0.039405s |
+| sort | - | - | **0.005869s** | 0.056412s | 0.078000s | 0.011144s | 0.013983s |
+| tree | **0.170805s** | - | 0.186897s | 1.492190s | 1.087000s | 0.259608s | 0.219367s |
+| float2string | 0.095309s | - | 0.277784s | **0.070197s** | 0.173000s | 0.400350s | 0.096659s |
+| fibonacci recursive | 0.006318s | - | **0.005386s** | 0.062684s | 0.012000s | 0.009417s | 0.007426s |
 
 ## Related
 

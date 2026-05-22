@@ -172,9 +172,55 @@ set(QUICKJS_URL "https://bellard.org/quickjs/quickjs-${QUICKJS_VERSION}.tar.xz")
 set(QUICKJS_URL_HASH "SHA256=996c6b5018fc955ad4d06426d0e9cb713685a00c825aa5c0418bd53f7df8b0b4")
 
 if (WIN32)
-    add_custom_target(stageProfileQuickJs ALL
-        COMMENT "QuickJS must be installed separately on Windows and available as qjs in PATH"
-    )
+    # Bellard's QuickJS doesn't ship Windows binaries and there's no winget/
+    # choco package for stock qjs. Build it from source via MinGW gcc +
+    # MSYS2 make — both ship widely on Windows dev boxes (Strawberry Perl
+    # bundles MinGW gcc as `C:/Strawberry/c/bin/gcc.exe`; MSYS2 lives at
+    # `C:/msys64/usr/bin/make.exe`). Falls back to "BYO qjs in PATH" if
+    # neither toolchain is found.
+    find_program(MINGW_GCC NAMES gcc HINTS "C:/Strawberry/c/bin")
+    find_program(MSYS2_MAKE NAMES make HINTS "C:/msys64/usr/bin")
+    if (MINGW_GCC AND MSYS2_MAKE)
+        get_filename_component(MINGW_GCC_DIR "${MINGW_GCC}" DIRECTORY)
+        get_filename_component(MSYS2_MAKE_DIR "${MSYS2_MAKE}" DIRECTORY)
+        set(QUICKJS_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/quickjs-src")
+        set(QUICKJS_EXECUTABLE_PATH "${QUICKJS_SOURCE_DIR}/qjs.exe")
+        # Generated build wrapper: prepend MinGW + MSYS2 dirs to PATH, chdir
+        # to source, invoke `make qjs.exe`. cmd doesn't search cwd for
+        # executables by default, so msvc-style "minilua" mistakes don't
+        # bite us here — make resolves them via PATH from the bin dirs.
+        file(TO_NATIVE_PATH "${MINGW_GCC_DIR}" MINGW_GCC_DIR_NATIVE)
+        file(TO_NATIVE_PATH "${MSYS2_MAKE_DIR}" MSYS2_MAKE_DIR_NATIVE)
+        file(TO_NATIVE_PATH "${QUICKJS_SOURCE_DIR}" QJS_SRC_NATIVE)
+        set(QJS_WRAPPER "${CMAKE_CURRENT_BINARY_DIR}/build_qjs_mingw.bat")
+        file(WRITE "${QJS_WRAPPER}"
+"@echo off\r\nset PATH=${MINGW_GCC_DIR_NATIVE};${MSYS2_MAKE_DIR_NATIVE};%PATH%\r\ncd /d \"${QJS_SRC_NATIVE}\" || exit /b 1\r\nmake qjs.exe\r\nexit /b %ERRORLEVEL%\r\n")
+
+        ExternalProject_Add(profileQuickJs
+            URL ${QUICKJS_URL}
+            URL_HASH ${QUICKJS_URL_HASH}
+            DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+            SOURCE_DIR ${QUICKJS_SOURCE_DIR}
+            CONFIGURE_COMMAND ""
+            BUILD_IN_SOURCE TRUE
+            BUILD_COMMAND cmd /c "${QJS_WRAPPER}"
+            INSTALL_COMMAND ""
+            BUILD_BYPRODUCTS ${QUICKJS_EXECUTABLE_PATH}
+        )
+
+        add_custom_target(stageProfileQuickJs ALL
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${PROFILE_EXAMPLES_DIR}/tests/js"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${QUICKJS_EXECUTABLE_PATH}"
+                "${PROFILE_EXAMPLES_DIR}/tests/js/qjs.exe"
+            DEPENDS profileQuickJs
+            COMMENT "Staging QuickJS interpreter into SDK examples/profile/tests/js"
+        )
+    else()
+        add_custom_target(stageProfileQuickJs ALL
+            COMMENT "QuickJS not built: install MinGW gcc (Strawberry Perl ships one) + MSYS2 make and re-configure, or place a `qjs.exe` on PATH manually."
+        )
+    endif()
 else()
     if (NOT PROFILE_MAKE_PROGRAM)
         find_program(PROFILE_MAKE_PROGRAM NAMES gmake make REQUIRED)
@@ -222,7 +268,22 @@ file(GENERATE OUTPUT "${PROFILE_BUILD_INFO_FILE}" CONTENT "${PROFILE_BUILD_INFO_
 if (WIN32)
     set(LUAJIT_EXECUTABLE_PATH "${LUAJIT_SOURCE_DIR}/src/luajit.exe")
     set(LUAJIT_RUNTIME_DLL_PATH "${LUAJIT_SOURCE_DIR}/src/lua51.dll")
-    set(LUAJIT_BUILD_COMMAND ${CMAKE_COMMAND} -E chdir ${LUAJIT_SOURCE_DIR}/src cmd /c msvcbuild.bat)
+    # `cmake -E chdir <dir> cmd /c msvcbuild.bat` doesn't reliably propagate
+    # cwd into the spawned cmd. Passing the chained command inline via
+    # `set(... cmd /c "cd /d ... && msvcbuild.bat")` runs aground on
+    # CMake/MSBuild double-quote escaping (the .vcxproj emits `\"` which
+    # cmd.exe doesn't honor as an escape).
+    #
+    # Sidestep both by generating a tiny .bat that does the chdir + msvcbuild
+    # call itself, and invoke it directly from ExternalProject_Add.
+    file(TO_NATIVE_PATH "${LUAJIT_SOURCE_DIR}/src" LUAJIT_SRC_NATIVE)
+    set(LUAJIT_BUILD_WRAPPER "${CMAKE_CURRENT_BINARY_DIR}/build_luajit_msvc.bat")
+    # msvcbuild.bat invokes minilua/buildvm (binaries it just built in cwd) without
+    # `.\` prefixes, but cmd.exe does NOT search cwd by default for executables.
+    # Prepend cwd to PATH in the wrapper so those bare invocations resolve.
+    file(WRITE "${LUAJIT_BUILD_WRAPPER}"
+"@echo off\r\ncd /d \"${LUAJIT_SRC_NATIVE}\" || exit /b 1\r\nset PATH=%CD%;%PATH%\r\ncall .\\msvcbuild.bat\r\nexit /b %ERRORLEVEL%\r\n")
+    set(LUAJIT_BUILD_COMMAND cmd /c "${LUAJIT_BUILD_WRAPPER}")
 else()
     find_program(PROFILE_MAKE_PROGRAM NAMES gmake make REQUIRED)
     set(LUAJIT_EXECUTABLE_PATH "${LUAJIT_SOURCE_DIR}/src/luajit")

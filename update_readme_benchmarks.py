@@ -1,4 +1,13 @@
 #!/usr/bin/env python3
+"""Regenerate the per-platform benchmark snapshot in README.md from
+`profile_results_<platform>.json` files.
+
+Each `profile_results_<platform>.json` becomes a `### <PlatformDisplayName>`
+section with full prelude (CPU, capture path + timestamp, toolchain, runtime
+versions) and the two benchmark tables (Interpreted / AOT or JIT). Sections
+are ordered darwin first, then alphabetical by platform key. Platforms missing
+a runtime show `-` in that column; rows with no entries are skipped.
+"""
 
 from __future__ import annotations
 
@@ -8,6 +17,13 @@ from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+PROFILE_GLOB = "profile_results_*.json"
+
+# darwin first (canonical reference), then alpha. Unknown platforms sort last
+# by name.
+PLATFORM_DISPLAY = {"darwin": "macOS", "linux": "Linux", "windows": "Windows"}
+PLATFORM_ORDER   = {"darwin": 0, "linux": 1, "windows": 2}
 
 
 @dataclass(frozen=True)
@@ -65,13 +81,12 @@ SECTION_CONFIGS: tuple[SectionConfig, ...] = (
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Regenerate the benchmark snapshot tables in README.md from a benchmark JSON file."
+        description="Regenerate the per-platform benchmark snapshot in README.md."
     )
     parser.add_argument(
-        "history_json",
-        nargs="?",
-        default="profile_results.json",
-        help="Path to the benchmark JSON file.",
+        "--profiles-dir",
+        default=".",
+        help="Directory holding profile_results_<platform>.json files (default: cwd).",
     )
     parser.add_argument(
         "--readme",
@@ -94,43 +109,75 @@ def load_json(path: Path) -> dict[str, Any]:
     return data
 
 
-def build_snapshot(data: dict[str, Any], history_path: Path, readme_path: Path) -> str:
+def find_profiles(profiles_dir: Path) -> list[tuple[Path, dict[str, Any]]]:
+    paths = sorted(profiles_dir.glob(PROFILE_GLOB))
+    profiles: list[tuple[Path, dict[str, Any]]] = []
+    for p in paths:
+        data = load_json(p)
+        # Tolerate older files lacking the "platform" field by inferring from
+        # the filename suffix. The new main.das always writes the field.
+        if "platform" not in data:
+            suffix = p.stem[len("profile_results_"):] if p.stem.startswith("profile_results_") else ""
+            data["platform"] = suffix or "unknown"
+        profiles.append((p, data))
+    profiles.sort(key=lambda pair: (PLATFORM_ORDER.get(pair[1]["platform"], 99), pair[1]["platform"]))
+    return profiles
+
+
+def build_snapshot(profiles: list[tuple[Path, dict[str, Any]]], readme_path: Path) -> str:
+    if not profiles:
+        return ("## Benchmark Snapshot\n\n"
+                "No `profile_results_<platform>.json` files found. Run `daslang main.das -- --json` "
+                "on each target platform to capture data.\n")
+
+    lines = ["## Benchmark Snapshot",
+             "",
+             "Per-platform captures. Lower is better. The fastest result in each row is in bold. "
+             "`-` means no value for that runtime on that benchmark."]
+
+    for path, data in profiles:
+        lines.append("")
+        lines.extend(render_platform_section(path, data, readme_path))
+
+    return "\n".join(lines)
+
+
+def render_platform_section(path: Path, data: dict[str, Any], readme_path: Path) -> list[str]:
     cpu = require_string(data, "cpu")
+    platform_key = require_string(data, "platform")
     timestamp = require_string(data, "timestamp")
     versions = require_object(data, "versions")
-    rel_history_path = relative_display_path(history_path, readme_path.parent)
+    rel_path = relative_display_path(path, readme_path.parent)
+    display = PLATFORM_DISPLAY.get(platform_key, platform_key.capitalize())
 
     lines = [
-        "## Benchmark Snapshot",
+        f"### {display} — {cpu}",
         "",
         "Platform information:",
         "",
-        f"- {platform_name()} on {cpu}",
-        f"- Captured from `{rel_history_path}` on {timestamp}",
+        f"- Captured from `{rel_path}` on {timestamp}",
         (
             f"- Toolchain: {require_string(versions, 'cpp_compiler')}, "
             f"daslang {require_string(versions, 'daslang')}, "
             f"LLVM {require_string(versions, 'llvm')}"
         ),
         (
-            f"- Runtimes: {format_runtime_version('lua', require_string(versions, 'lua'))}, "
-            f"{format_runtime_version('luajit', require_string(versions, 'luajit'))}, "
-            f"{format_runtime_version('luau', require_string(versions, 'luau'))}, "
-            f"{format_runtime_version('mono', require_string(versions, 'mono'))}, "
-            f"{format_runtime_version('dotnet', require_string(versions, 'dotnet'))}, "
-            f"{format_runtime_version('quickjs', require_string(versions, 'quickjs'))}, "
-            f"{format_runtime_version('quirrel', require_string(versions, 'quirrel'))}"
+            f"- Runtimes: {format_runtime_version('lua', optional_string(versions, 'lua'))}, "
+            f"{format_runtime_version('luajit', optional_string(versions, 'luajit'))}, "
+            f"{format_runtime_version('luau', optional_string(versions, 'luau'))}, "
+            f"{format_runtime_version('mono', optional_string(versions, 'mono'))}, "
+            f"{format_runtime_version('dotnet', optional_string(versions, 'dotnet'))}, "
+            f"{format_runtime_version('quickjs', optional_string(versions, 'quickjs'))}, "
+            f"{format_runtime_version('quirrel', optional_string(versions, 'quirrel'))}"
         ),
-        "",
-        "Lower is better. The fastest result in each row is in bold. `-` means no value for that runtime on that benchmark.",
     ]
 
     for config in SECTION_CONFIGS:
         section = require_object(data, config.title)
-        lines.extend(["", f"### {config.title}", ""])
+        lines.extend(["", f"#### {config.title}", ""])
         lines.extend(render_table(config, section))
 
-    return "\n".join(lines)
+    return lines
 
 
 def render_table(config: SectionConfig, section: dict[str, Any]) -> list[str]:
@@ -150,6 +197,8 @@ def render_table(config: SectionConfig, section: dict[str, Any]) -> list[str]:
             raise ValueError(
                 f"Unexpected language(s) in {config.title!r}/{test_name!r}: {', '.join(unknown)}"
             )
+        if not entries:
+            continue
         best_time = min(entry["time"] for entry in entries.values())
         values = [format_cell(entries.get(language), best_time) for language in config.columns]
         lines.append(f"| {test_name} | " + " | ".join(values) + " |")
@@ -158,8 +207,8 @@ def render_table(config: SectionConfig, section: dict[str, Any]) -> list[str]:
 
 
 def validate_row(section_name: str, test_name: str, row: Any) -> dict[str, dict[str, Any]]:
-    if not isinstance(row, list) or not row:
-        raise ValueError(f"Section {section_name!r}, row {test_name!r} must be a non-empty array")
+    if not isinstance(row, list):
+        raise ValueError(f"Section {section_name!r}, row {test_name!r} must be an array")
     entries: dict[str, dict[str, Any]] = {}
     for item in row:
         if not isinstance(item, dict):
@@ -213,11 +262,25 @@ def require_string(data: dict[str, Any], key: str) -> str:
     return value
 
 
+def optional_string(data: dict[str, Any], key: str) -> str:
+    value = data.get(key)
+    if isinstance(value, str):
+        return value
+    return ""
+
+
 def short_version(text: str) -> str:
-    return text.strip().splitlines()[0]
+    lines = text.strip().splitlines()
+    return lines[0] if lines else ""
 
 
 def format_runtime_version(name: str, text: str) -> str:
+    if not text:
+        # Missing runtime renders as "<Display> -" so the reader can see we
+        # tried to detect it (vs. it being plain omitted).
+        labels = {"lua": "Lua", "luajit": "LuaJIT", "luau": "Luau",
+                  "mono": "Mono", "dotnet": ".NET", "quickjs": "QuickJS", "quirrel": "Quirrel"}
+        return f"{labels.get(name, name)} -"
     line = short_version(text)
     if name == "lua":
         return line.split("  Copyright", 1)[0]
@@ -233,26 +296,18 @@ def format_runtime_version(name: str, text: str) -> str:
     if name == "dotnet":
         return f".NET {line}" if not line.startswith(".NET ") else line
     if name == "quickjs":
+        # macOS qjs -h prints `QuickJS - Type "\h" for help` then `version <ver>`;
+        # Windows qjs.exe (built from source) prints just the version as line 1.
+        # Normalize both to `QuickJS <ver>`.
         marker = "version "
         if marker in line:
             return f"QuickJS {line.split(marker, 1)[1]}"
-        return line
+        if line.startswith("QuickJS"):
+            return line
+        return f"QuickJS {line}"
     if name == "quirrel":
         return f"Quirrel {line.split(' Copyright', 1)[0]}"
     return line
-
-
-def platform_name() -> str:
-    import platform
-
-    system = platform.system().lower()
-    if system == "darwin":
-        return "macOS"
-    if system == "windows":
-        return "Windows"
-    if system == "linux":
-        return "Linux"
-    return platform.system()
 
 
 def update_readme(readme_path: Path, snapshot: str) -> None:
@@ -276,9 +331,9 @@ def update_readme(readme_path: Path, snapshot: str) -> None:
 def main() -> int:
     args = parse_args()
     readme_path = Path(args.readme).resolve()
-    history_path = Path(args.history_json).resolve()
-    data = load_json(history_path)
-    snapshot = build_snapshot(data, history_path, readme_path)
+    profiles_dir = Path(args.profiles_dir).resolve()
+    profiles = find_profiles(profiles_dir)
+    snapshot = build_snapshot(profiles, readme_path)
     if args.stdout:
         print(snapshot)
         return 0
