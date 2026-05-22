@@ -33,7 +33,16 @@ def shell_quote(path : string) {
 
 [no_jit, no_aot]
 def quickjs_executable(js_root : string) {
-    return get_platform_name() == "windows" ? "qjs" : native_executable("{js_root}/qjs")
+    // On Windows we now build qjs.exe into <runtime_root>/tests/js/qjs.exe
+    // (see CMakeLists.txt — stageProfileQuickJs on WIN32 stages it there
+    // when MinGW gcc + MSYS2 make are available). Fall back to looking it
+    // up on PATH if the staged copy isn't present (older builds or BYO
+    // installs).
+    if (get_platform_name() == "windows") {
+        let staged = "{js_root}/qjs.exe"
+        return fexist(staged) ? staged : "qjs"
+    }
+    return native_executable("{js_root}/qjs")
 }
 
 [no_jit, no_aot]
@@ -92,11 +101,23 @@ struct TestFile {
 
 let ENCODING = string([ 0xefu8, 0xbbu8, 0xbfu8])
 
+// Windows popen ⇒ cmd /c <command>. cmd's quote-strip rule: if the command
+// starts and ends with `"`, strip first+last quote before parsing. Our
+// quoted-path-and-quoted-script commands trigger that strip, leaving
+// `D:\...\luau.exe" -O2 ... "D:\...\script.luau` — quotes now unbalanced
+// in the middle, cmd errors with "filename, directory name, or volume
+// label syntax is incorrect". Wrap once more on Windows so the outer pair
+// gets stripped harmlessly.
+[no_jit, no_aot]
+def cmd_safe(s : string) {
+    return get_platform_name() == "windows" ? "\"{s}\"" : s
+}
+
 [no_jit, no_aot]
 def run_and_gun(lang, cmdLine : string) {
     unsafe {
         print("\"{lang}\", ")
-        let exitCode = popen(cmdLine) <| $(f) {
+        let exitCode = popen(cmd_safe(cmdLine)) <| $(f) {
             var skipping = true
             while (!feof(f)) {
                 var st = fgets(f)
@@ -119,7 +140,7 @@ def run_and_gun(lang, cmdLine : string) {
 def run_and_gun_silent(cmdLine : string) {
     unsafe {
         var problem = ""
-        var exitCode = popen(cmdLine) <| $(f) {
+        var exitCode = popen(cmd_safe(cmdLine)) <| $(f) {
             while (!feof(f)) {
                 let st = fgets(f)
                 problem = "{problem}\n{st}"

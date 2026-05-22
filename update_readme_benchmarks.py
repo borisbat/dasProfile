@@ -296,10 +296,15 @@ def format_runtime_version(name: str, text: str) -> str:
     if name == "dotnet":
         return f".NET {line}" if not line.startswith(".NET ") else line
     if name == "quickjs":
+        # macOS qjs -h prints `QuickJS - Type "\h" for help` then `version <ver>`;
+        # Windows qjs.exe (built from source) prints just the version as line 1.
+        # Normalize both to `QuickJS <ver>`.
         marker = "version "
         if marker in line:
             return f"QuickJS {line.split(marker, 1)[1]}"
-        return line
+        if line.startswith("QuickJS"):
+            return line
+        return f"QuickJS {line}"
     if name == "quirrel":
         return f"Quirrel {line.split(' Copyright', 1)[0]}"
     return line
