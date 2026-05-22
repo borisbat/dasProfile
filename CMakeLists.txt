@@ -222,7 +222,11 @@ file(GENERATE OUTPUT "${PROFILE_BUILD_INFO_FILE}" CONTENT "${PROFILE_BUILD_INFO_
 if (WIN32)
     set(LUAJIT_EXECUTABLE_PATH "${LUAJIT_SOURCE_DIR}/src/luajit.exe")
     set(LUAJIT_RUNTIME_DLL_PATH "${LUAJIT_SOURCE_DIR}/src/lua51.dll")
-    set(LUAJIT_BUILD_COMMAND ${CMAKE_COMMAND} -E chdir ${LUAJIT_SOURCE_DIR}/src cmd /c msvcbuild.bat)
+    # `cmake -E chdir` does not reliably propagate cwd into the spawned
+    # `cmd /c`, so msvcbuild.bat (which lives in src/) is not found. Drive
+    # the cwd change from inside cmd itself with `cd /d ... && ...`.
+    file(TO_NATIVE_PATH "${LUAJIT_SOURCE_DIR}/src" LUAJIT_SRC_NATIVE)
+    set(LUAJIT_BUILD_COMMAND cmd /c "cd /d \"${LUAJIT_SRC_NATIVE}\" && msvcbuild.bat")
 else()
     find_program(PROFILE_MAKE_PROGRAM NAMES gmake make REQUIRED)
     set(LUAJIT_EXECUTABLE_PATH "${LUAJIT_SOURCE_DIR}/src/luajit")

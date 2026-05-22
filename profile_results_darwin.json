@@ -1,5 +1,6 @@
 {
   "cpu":"Apple M1 Max",
+  "platform":"darwin",
   "timestamp":"Wed May 13 02:48:38 2026",
   "versions":{
     "cpp_compiler":"AppleClang 21.0.0.21000101",

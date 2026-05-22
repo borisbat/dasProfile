@@ -6,16 +6,17 @@ This repository contains cross-language benchmark suites comparing daslang again
 
 ## Benchmark Snapshot
 
+Per-platform captures. Lower is better. The fastest result in each row is in bold. `-` means no value for that runtime on that benchmark.
+
+### macOS — Apple M1 Max
+
 Platform information:
 
-- macOS on Apple M1 Max
-- Captured from `profile_results.json` on Wed May 13 02:48:38 2026
+- Captured from `profile_results_darwin.json` on Wed May 13 02:48:38 2026
 - Toolchain: AppleClang 21.0.0.21000101, daslang 0.6.2, LLVM 22.1.5
 - Runtimes: Lua 5.5.0, LuaJIT 2.1.1774896198, Luau 0.720, Mono 6.14.1 (tarball Tue Apr 29 17:43:02 UTC 2025), .NET 10.0.300, QuickJS 2025-09-13, Quirrel 4.20.0
 
-Lower is better. The fastest result in each row is in bold. `-` means no value for that runtime on that benchmark.
-
-### Interpreted
+#### Interpreted
 
 | Test | DAS interpreter | Luau | Lua | LuaJIT -joff | Quirrel | QuickJS | Mono --interpreter |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -36,7 +37,7 @@ Lower is better. The fastest result in each row is in bold. `-` means no value f
 | float2string | **0.053663s** | 0.055475s | 0.417758s | 0.154445s | 0.167451s | 0.272000s | 1.885519s |
 | fibonacci recursive | **0.045765s** | 0.078675s | 0.068694s | 0.055189s | 0.158539s | 0.108000s | 0.046331s |
 
-### AOT or JIT
+#### AOT or JIT
 
 | Test | DAS AOT | DAS JIT | C++ | Luau --codegen | LuaJIT | Mono | .NET |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
