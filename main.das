@@ -6,6 +6,7 @@ require daslib/strings_boost
 require peg/peg
 require daslib/fio
 require daslib/rtti
+require daslib/ast
 require daslib/debugapi
 require daslib/module_path
 require llvm/daslib/llvm_boost
