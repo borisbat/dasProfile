@@ -1,4 +1,5 @@
 options gen2
+options _comment_hygiene = true
 options rtti
 options unsafe_table_lookup = false
 require daslib/clargs
@@ -117,7 +118,7 @@ def compile_and_run(fileName : string; useAot : bool; useJit : bool) {
                     try {
                         unsafe(invoke_in_context(context, "main"))
                     } recover {
-                        let ctx = unsafe(reinterpret<Context?> context)
+                        let ctx = unsafe(reinterpret<Context?>(context))
                         print("failed to run {fileName}\n{ctx.exceptionAt}: {ctx.exception}\n")
                         failed ++
                     }
@@ -192,15 +193,9 @@ def first_nonempty_command_line(cmd : string) {
     return result
 }
 
-// Strip marketing noise from raw CPU brand strings so the daslang.io cycler
-// row and the README headings stay readable. Single source of truth: trim
-// here, every downstream consumer sees a clean value.
-//
-// Cases handled:
-//   "Apple M1 Max"                                       → unchanged
-//   "AMD Ryzen Threadripper 3990X 64-Core Processor"     → "AMD Ryzen Threadripper 3990X"
-//   "Intel(R) Core(TM) i9-9900K CPU @ 3.60GHz"           → "Intel Core i9-9900K"
-//   "AMD Ryzen 9 7950X"                                  → unchanged
+// Strip marketing noise from raw CPU brand strings — the "(R)"/"(TM)" marks and
+// the " CPU @ 3.60GHz" / " 64-Core Processor" tails — so the README headings and
+// the daslang.io cycler row stay readable. Trim once here; consumers see it clean.
 def private collapse_spaces(s : string) {
     var out = s
     while (out |> find("  ") != -1) {
@@ -457,11 +452,9 @@ def make_entries {
             parts |> push(arg)
         }
     }
-    // Inject -jit-no-cache when parent runs -jit but didn't pass it. Workaround
-    // for GaijinEntertainment/daScript#2802 — on Windows the per-script JIT
-    // DLL cache writes absolute target addresses into the emitted machine code;
-    // ASLR moves DLL bases between runs so a cache-hit DLL crashes when loaded
-    // back. -jit-no-cache bypasses the cache and runs in-memory codegen.
+    // Inject -jit-no-cache under -jit on Windows (workaround for daScript#2802):
+    // the per-script JIT DLL cache bakes absolute target addresses into the
+    // emitted code, so ASLR rebasing makes a cache-hit DLL crash when loaded back.
     if (hasJit && !hasNoCache && get_platform_name() == "windows") {
         parts |> push("-jit-no-cache")
     }
@@ -576,11 +569,9 @@ def make_json_output(cpu_name : string; version_info : VersionInfo) {
         interpreted <- collect(interpreted_languages, entries),
         aot_or_jit  <- collect(aot_jit_languages, entries))
 
-    // Platform-suffixed file lets multiple captures coexist in the repo
-    // (profile_results_darwin.json, profile_results_windows.json, ...).
-    // The README generator (update_readme_benchmarks.py) globs all of these
-    // for per-platform sections; daslang.io's playground cycler fetches them
-    // by suffix too.
+    // Platform-suffixed so captures from several machines coexist; the README
+    // generator (update_readme_benchmarks.py) globs them for per-platform
+    // sections, and daslang.io's playground cycler fetches them by suffix.
     let output_file = "profile_results_{get_platform_name()}.json"
     unsafe {
         fopen(output_file, "w") $(f) {

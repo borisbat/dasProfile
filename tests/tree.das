@@ -1,4 +1,5 @@
 options gen2
+options _comment_hygiene = true
 // this is port from https://github.com/frol/completely-unscientific-benchmarks
 // naive is almost direct kotlin implementation
 // regular is almost direct C++-raw implementation

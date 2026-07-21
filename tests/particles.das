@@ -1,4 +1,5 @@
 options gen2
+options _comment_hygiene = true
 // options log = true, log_nodes =true, print_ref = true, print_var_access = true // , log_optimization_passes = true
 // options logCpp = true
 // options log_nodes=true

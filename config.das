@@ -1,4 +1,5 @@
 options gen2
+options _comment_hygiene = true
 require daslib/fio
 require daslib/strings
 
@@ -16,11 +17,9 @@ def native_executable(path_no_ext : string) {
     return get_platform_name() == "windows" ? "{path_no_ext}.exe" : path_no_ext
 }
 
-// Normalize forward-slash paths to backslash on Windows. popen on Windows
-// runs the command through cmd.exe; even when wrapped in outer double quotes,
-// cmd parses `D:/foo/bar.exe` as a drive change followed by a switch and
-// errors with "The filename, directory name, or volume label syntax is
-// incorrect." Backslash-normalized paths survive the cmd parse intact.
+// Normalize forward slashes to backslashes on Windows: popen runs the command
+// through cmd.exe, which parses `D:/foo/bar.exe` as a drive change plus a switch
+// and fails with "filename, directory name, or volume label syntax is incorrect".
 [no_jit, no_aot]
 def to_native_path(p : string) {
     return get_platform_name() == "windows" ? (p |> replace("/", "\\")) : p
@@ -33,11 +32,9 @@ def shell_quote(path : string) {
 
 [no_jit, no_aot]
 def quickjs_executable(js_root : string) {
-    // On Windows we now build qjs.exe into <runtime_root>/tests/js/qjs.exe
-    // (see CMakeLists.txt — stageProfileQuickJs on WIN32 stages it there
-    // when MinGW gcc + MSYS2 make are available). Fall back to looking it
-    // up on PATH if the staged copy isn't present (older builds or BYO
-    // installs).
+    // Windows stages qjs.exe into <runtime_root>/tests/js/ (CMakeLists.txt,
+    // stageProfileQuickJs, when MinGW gcc + MSYS2 make are available); fall back
+    // to PATH when the staged copy is absent (older builds or BYO installs).
     if (get_platform_name() == "windows") {
         let staged = "{js_root}/qjs.exe"
         return fexist(staged) ? staged : "qjs"
@@ -101,13 +98,9 @@ struct TestFile {
 
 let ENCODING = string([ 0xefu8, 0xbbu8, 0xbfu8])
 
-// Windows popen ⇒ cmd /c <command>. cmd's quote-strip rule: if the command
-// starts and ends with `"`, strip first+last quote before parsing. Our
-// quoted-path-and-quoted-script commands trigger that strip, leaving
-// `D:\...\luau.exe" -O2 ... "D:\...\script.luau` — quotes now unbalanced
-// in the middle, cmd errors with "filename, directory name, or volume
-// label syntax is incorrect". Wrap once more on Windows so the outer pair
-// gets stripped harmlessly.
+// Windows popen ⇒ cmd /c. cmd strips the first and last quote whenever a command
+// both starts and ends with `"`, which leaves our quoted-exe + quoted-script
+// commands unbalanced mid-string; wrap once more so that strip is harmless.
 [no_jit, no_aot]
 def cmd_safe(s : string) {
     return get_platform_name() == "windows" ? "\"{s}\"" : s
@@ -216,11 +209,9 @@ def run_files(tf : TestFile) {
         let monoCompiler = "mcs"
         let monoRunner = "mono"
         let monoLibrary = "{monoRuntimeRoot}/{csharp_shared_library_name("addOne")}"
-        // DYLD_LIBRARY_PATH / LD_LIBRARY_PATH are POSIX-only. On Windows the
-        // prefix-VAR=VAL command-line shell syntax doesn't parse — `cmd.exe`
-        // sees `'DYLD_LIBRARY_PATH' is not recognized as an internal or
-        // external command`. Windows Mono finds native deps via PATH (or
-        // sibling-DLL search) and doesn't need either env var.
+        // DYLD/LD_LIBRARY_PATH are POSIX-only: cmd.exe can't parse the prefix
+        // VAR=VAL syntax ("'DYLD_LIBRARY_PATH' is not recognized..."), and
+        // Windows Mono finds native deps via PATH anyway.
         let monoLibraryEnv = (get_platform_name() == "windows"
             ? ""
             : "DYLD_LIBRARY_PATH={shell_quote(monoRuntimeRoot)} LD_LIBRARY_PATH={shell_quote(monoRuntimeRoot)} ")
