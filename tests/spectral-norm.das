@@ -1,4 +1,5 @@
 options gen2
+options _comment_hygiene = true
 // options log=true, print_var_access=true, print_ref=true
 
 require testProfile

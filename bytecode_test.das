@@ -1,9 +1,12 @@
 options gen2
+options _comment_hygiene = true
 
 require UnitTest
 
 [sideeffects]
 def fib(n : int) {
+// nolint:STYLE014 — loop prologue has no daslang counterpart; the listing must
+// stay instruction-for-instruction aligned with fib_bytecode below.
                                 // MOV     A, ARG[0]
                                 // DEC     A
                                 // CMPLE   A, 0

@@ -1,4 +1,5 @@
 options gen2
+options _comment_hygiene = true
 require daslib/debugger
 require daslib/strings_boost
 
