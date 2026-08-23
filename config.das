@@ -148,6 +148,7 @@ def run_and_gun_silent(cmdLine : string) {
 
 [no_jit, no_aot]
 def run_files(tf : TestFile) {
+    if (!empty(get_env_variable("DASPROFILE_DAS_ONLY"))) return
     let sourceRoot = profile_source_root()
     let runtimeRoot = profile_runtime_root()
 

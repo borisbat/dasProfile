@@ -3,6 +3,7 @@ options _comment_hygiene = true
 // options log=true, print_var_access=true, print_ref=true
 
 require testProfile
+require daslib/only_nttp
 
 require math
 
@@ -18,7 +19,7 @@ def level(c : float2) : int {
     return l - 1
 }
 
-[sideeffects]
+[sideeffects, only_nttp]
 def test {
     let xmin = -2.0
     let xmax = 2.0

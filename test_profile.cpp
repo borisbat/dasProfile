@@ -73,6 +73,14 @@ ___noinline int AddOne(int a) {
     return a+1;
 }
 
+// flavor A/B instrument: the same callees bound both ways (member vs NTTP)
+// so one process can measure the pure binding-flavor delta, immune to
+// machine-state drift between rebuilds
+
+___noinline float ParseFloat(const char * s) {
+    return s ? strtof(s, nullptr) : 0.0f;
+}
+
 // ES
 
 
@@ -1182,7 +1190,10 @@ public:
         addUsing<ObjectArray>(*this, lib, "ObjectArray");
         registerVectorFunctions<ObjectArray>::init(this, lib, true, true);
         // register functions
-        addExtern<DAS_BIND_FUN(AddOne)>(*this,lib,"AddOne",SideEffects::none, "AddOne");
+        addExternInline<DAS_BIND_FUN(AddOne)>(*this,lib,"AddOne",SideEffects::none, "AddOne");
+        addExtern<DAS_BIND_FUN(AddOne)>(*this,lib,"AddOneMember",SideEffects::none, "AddOne");
+        addExternInline<DAS_BIND_FUN(ParseFloat)>(*this,lib,"ParseFloatInline",SideEffects::none, "ParseFloat");
+        addExtern<DAS_BIND_FUN(ParseFloat)>(*this,lib,"ParseFloatMember",SideEffects::none, "ParseFloat");
         addExtern<DAS_BIND_FUN(updateObject)>(*this,lib,"interopUpdate",SideEffects::modifyExternal,"updateObject");
         addExtern<DAS_BIND_FUN(updateTest)>(*this,lib,"interopUpdateTest",SideEffects::modifyExternal,"updateTest");
         addExtern<DAS_BIND_FUN(update10000)>(*this,lib,"update10000",SideEffects::modifyExternal,"update10000");

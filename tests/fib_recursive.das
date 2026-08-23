@@ -3,10 +3,11 @@ options _comment_hygiene = true
 // options log=true, print_var_access=true, print_ref=true
 
 require testProfile
+require daslib/only_nttp
 
 include ../config.das
 
-[sideeffects]
+[sideeffects, only_nttp]
 def fibR(n) {
     if (n < 2) {
         return n
