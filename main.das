@@ -93,6 +93,9 @@ def compile_and_run(fileName : string; useAot : bool; useJit : bool; runMain : b
             if (useJit) {
                 cop.jit_enabled = jit_enabled()
                 if (jit_enabled()) {
+                    // DLL-cache mode: the prewarm pass mints the cache, so the measured
+                    // run loads it instead of benchmarking right after its own codegen
+                    cop.jit_dll_mode = true
                     access |> add_extra_module("just_in_time", "{get_das_root()}/daslib/just_in_time.das")
                 }
             } elif (useAot) {
