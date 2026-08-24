@@ -45,6 +45,7 @@ DAS_MOD_API int AddOne(int a);
 
 DAS_MOD_API int testDict(das::Array & arr);
 DAS_MOD_API float testExpLoop(int count);
+DAS_MOD_API float ParseFloat(const char * s);
 DAS_MOD_API int testFibR(int n);
 DAS_MOD_API int testFibI(int n);
 DAS_MOD_API void testNBodiesInit();

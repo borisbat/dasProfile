@@ -83,6 +83,39 @@ struct ProfileArgs {
     help : bool
 }
 
+// JIT lane: child process per test, run twice - mint the DLL cache, then measure warm.
+// In the shared harness process a jitted benchmark reads 2-3x slow on asymmetric cores.
+def run_jit_child(fileName : string) {
+    let exe = get_command_line_arguments()[0]
+    var cmd = "{exe} -jit {fileName}"
+    if (get_platform_name() == "windows") {
+        // daScript#2802: the DLL cache bakes absolute addresses; no cache on windows
+        cmd = "{exe} -jit -jit-no-cache {fileName}"
+    } else {
+        unsafe {
+            popen(cmd) $(f) {
+                while (!feof(f)) {
+                    fgets(f)
+                }
+            }
+        }
+    }
+    unsafe {
+        let exitCode = popen(cmd) $(f) {
+            while (!feof(f)) {
+                let st = (fgets(f)) |> trim()
+                if (st |> starts_with("\"")) {
+                    print("{st}\n")
+                }
+            }
+        }
+        if (exitCode != 0) {
+            print("failed to run {fileName} under -jit: exit {exitCode}\n")
+            failed ++
+        }
+    }
+}
+
 def compile_and_run(fileName : string; useAot : bool; useJit : bool) {
     let t0 = ref_time_ticks()
     var inscope access <- make_file_access("")
@@ -140,7 +173,7 @@ def test_single_file(fileName : string) {
     }
     if (ENABLE_JIT && jit_enabled()) {
         print("\"DAS JIT\", ")
-        compile_and_run(fileName, false, true)
+        run_jit_child(fileName)
     }
     if (ENABLE_INTERPRETER) {
         print("\"DAS INTERPRETER\", ")
