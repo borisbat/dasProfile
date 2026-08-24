@@ -29,7 +29,7 @@ def dot(v, u : double[N]) : double {
 def mult_Av(v : double[N]; var out : double[N]) {
     for (i in range(N)) {
         var sum = 0.0lf
-        for (j in range(N)) {
+        for [vectorize_disable] (j in range(N)) {
             sum += v[j] / A(i, j)
         }
         out[i] = sum
@@ -39,7 +39,7 @@ def mult_Av(v : double[N]; var out : double[N]) {
 def mult_Atv(v : double[N]; var out : double[N]) {
     for (i in range(N)) {
         var sum = 0.0lf
-        for (j in range(N)) {
+        for [vectorize_disable] (j in range(N)) {
             sum += v[j] / A(j, i)
         }
         out[i] = sum;

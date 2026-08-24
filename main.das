@@ -83,7 +83,7 @@ struct ProfileArgs {
     help : bool
 }
 
-def compile_and_run(fileName : string; useAot : bool; useJit : bool) {
+def compile_and_run(fileName : string; useAot : bool; useJit : bool; runMain : bool = true) {
     let t0 = ref_time_ticks()
     var inscope access <- make_file_access("")
     ensure_profile_modules_registered()
@@ -119,12 +119,14 @@ def compile_and_run(fileName : string; useAot : bool; useJit : bool) {
                     if (LOG_TEST_COMPILATION_TIME) {
                         print("compiled in {sec} sec\n")
                     }
-                    try {
-                        unsafe(invoke_in_context(context, "main"))
-                    } recover {
-                        let ctx = unsafe(reinterpret<Context?>(context))
-                        print("failed to run {fileName}\n{ctx.exceptionAt}: {ctx.exception}\n")
-                        failed ++
+                    if (runMain) {
+                        try {
+                            unsafe(invoke_in_context(context, "main"))
+                        } recover {
+                            let ctx = unsafe(reinterpret<Context?>(context))
+                            print("failed to run {fileName}\n{ctx.exceptionAt}: {ctx.exception}\n")
+                            failed ++
+                        }
                     }
                 }
             }
@@ -139,6 +141,10 @@ def test_single_file(fileName : string) {
         compile_and_run(fileName, true, false)
     }
     if (ENABLE_JIT && jit_enabled()) {
+        // prewarm: mint the JIT DLL cache and absorb the codegen burst OFF the
+        // measured run - benchmarking right after in-process codegen runs on a
+        // cold/demoted thread and reads 2-3x slow on asymmetric cores
+        compile_and_run(fileName, false, true, false)
         print("\"DAS JIT\", ")
         compile_and_run(fileName, false, true)
     }
