@@ -4,10 +4,11 @@ options _comment_hygiene = true
 
 require math
 require testProfile
+require daslib/only_nttp
 
 include ../config.das
 
-[sideeffects]
+[sideeffects, only_nttp]
 def expLoop(n) {
     var sum = 0.
     for (i in range(n)) {

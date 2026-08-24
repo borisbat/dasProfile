@@ -73,6 +73,10 @@ struct ProfileArgs {
     @clarg_doc = "Disable main tests"
     nomain : bool
 
+    @clarg_name = "das-only"
+    @clarg_doc = "Profile only the DAS lanes and C++ baseline; skip external runtimes"
+    dasonly : bool
+
     @clarg_short = "?"
     @clarg_name = "show-help"
     @clarg_doc = "Show this help and exit"
@@ -446,7 +450,8 @@ def make_entries {
         if (arg == "-jit-no-cache") {
             hasNoCache = true
         }
-        if (ends_with(arg, ".das") && !starts_with(arg, "-") && !starts_with(arg, "/")) {
+        let isAbsolute = starts_with(arg, "/") || starts_with(arg, "\\") || (arg |> slice(1, 2)) == ":"
+        if (ends_with(arg, ".das") && !starts_with(arg, "-") && !isAbsolute) {
             parts |> push("{getcwd()}/{arg}")
         } else {
             parts |> push(arg)
@@ -596,6 +601,12 @@ def main {
     if (args.help) {
         print_help(get_command_info(type<ProfileArgs>), "profile_tests")
         return
+    }
+
+    if (args.dasonly) {
+        // Env var (not an argument) so the gate survives the --json re-invocation
+        // and reaches the popen'd test contexts, which never see our command line.
+        set_env_variable("DASPROFILE_DAS_ONLY", "1")
     }
 
     let cpuName = get_cpu_name()

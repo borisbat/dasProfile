@@ -3,10 +3,11 @@ options _comment_hygiene = true
 // options log=true, log_nodes=true, print_var_access=true, print_ref=true
 // options logCpp=true
 require testProfile
+require daslib/only_nttp
 
 include ../config.das
 
-[sideeffects]
+[sideeffects, only_nttp]
 def testAdds() {
     var count = 0
     for (i in range(10000000)) {

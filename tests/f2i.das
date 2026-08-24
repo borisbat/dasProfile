@@ -3,13 +3,14 @@ options _comment_hygiene = true
 // options log=true, print_var_access=true, print_ref=true
 
 require testProfile
+require daslib/only_nttp
 
 include ../config.das
 
 let TOTAL_NUMBERS = 10000
 let TOTAL_TIMES = 100
 
-[sideeffects]
+[sideeffects, only_nttp]
 def f2i(nums) {
     var summ_q = 0.0
     for (i in 0..TOTAL_TIMES) {

@@ -3,6 +3,7 @@ options _comment_hygiene = true
 // options log=true, print_var_access=true, print_ref=true
 
 require testProfile
+require daslib/only_nttp
 
 options stack = 1_000_000
 options solid_context
@@ -51,7 +52,7 @@ def mult_AtAv(v : double[N]; var out : double[N]) {
     mult_Atv(tmp, out)
 }
 
-[sideeffects]
+[sideeffects, only_nttp]
 def test {
     var u, v : double[N]
     for (i in range(N)) {

@@ -3,6 +3,7 @@ options _comment_hygiene = true
 // options log=true, print_var_access=true, print_ref=true
 
 require testProfile
+require daslib/only_nttp
 
 include ../config.das
 
@@ -15,7 +16,7 @@ def isprime(n) {
     return true
 }
 
-[sideeffects]
+[sideeffects, only_nttp]
 def primes(n) {
     var count = 0
     for (i in range(2, n + 1)) {
