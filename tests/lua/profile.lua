@@ -19,13 +19,23 @@ elseif jit and jit.os == "Windows" then
   end
 end
 
+PROFILE_BUDGET = 0.5
+PROFILE_N = 1
+
 function profile_it(profiles, fn)
-  local res
-  for i = 1, profiles do
+  local n = 1
+  local total
+  while true do
     local start = clock()
-    fn()
-    local measured = clock() - start
-    if i == 1 or res > measured then res = measured end
+    for i = 1, n do fn() end
+    total = clock() - start
+    if total >= PROFILE_BUDGET or n >= 1000000000 then break end
+    local per = math.max(total / n, 1e-9)
+    local next = math.floor(PROFILE_BUDGET / per * 1.2)
+    next = math.min(next, 100 * n)
+    next = math.max(next, n + 1)
+    n = math.min(next, 1000000000)
   end
-  return res
+  PROFILE_N = n
+  return total / n
 end

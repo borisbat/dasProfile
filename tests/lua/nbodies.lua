@@ -134,10 +134,10 @@ local function simulate(N, bodies, nbody)
   scale_bodies(bodies, nbody, 1/0.01)
 end
 
-local N = 500000 --tonumber(arg and arg[1]) or 5000000
+local N = 33000 --tonumber(arg and arg[1]) or 5000000
 local nbody = #bodies
 
 loadfile("profile.lua")()
 offsetMomentum(bodies, nbody)
-io.write(string.format("\"n-bodies\", %.8f, %d\n", profile_it(PROFILE_RUNS, function () simulate(N, bodies, nbody) end), PROFILE_RUNS))
+io.write(string.format("\"n-bodies\", %.8f, %d\n", profile_it(PROFILE_RUNS, function () simulate(N, bodies, nbody) end), PROFILE_N))
 

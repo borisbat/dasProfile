@@ -45,12 +45,12 @@ var S = 0
 
 [export, no_aot]
 def main {
-    profile(BENCH_RUNS, "mandelbrot") <| $() {
+    bench("mandelbrot") <| $() {
         S = test()
     }
     if (is_cpp_time()) {
         cpp_label()
-        profile(BENCH_RUNS, "mandelbrot") <| $() {
+        bench("mandelbrot") <| $() {
             S += testMandelbrot()
         }
         run_files(TestFile(

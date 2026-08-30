@@ -10,7 +10,7 @@ include ../config.das
 [sideeffects, only_nttp]
 def testAdds() {
     var count = 0
-    for (i in range(10000000)) {
+    for (i in range(1000000)) {
         count = AddOne(count)
     }
     return count
@@ -19,16 +19,16 @@ def testAdds() {
 [export, no_aot, no_jit]
 def main {
     var count = 0
-    profile(BENCH_RUNS, "native loop") <| $() {
+    bench("native loop") <| $() {
         count = testAdds()
     }
-    assert(10000000 == count)
+    assert(1000000 == count)
     if (is_cpp_time()) {
         cpp_label()
-        profile(BENCH_RUNS, "native loop") <| $() {
+        bench("native loop") <| $() {
             count = testNativeLoop()
         }
-        assert(10000000 == count)
+        assert(1000000 == count)
         run_files(TestFile(
             native = true,
             luauFile = "native.luau",

@@ -34,12 +34,12 @@ def main {
     var tab : table<string; int>
     var src : array<string>
     makeRandomSequence(src)
-    profile(BENCH_RUNS, "dictionary") <| $() {
+    bench("dictionary") <| $() {
         dict(tab, src)
     }
     if (is_cpp_time()) {
         cpp_label()
-        profile(BENCH_RUNS, "dictionary") <| $() {
+        bench("dictionary") <| $() {
             testProfile::testDict(src)
         }
         run_files(TestFile(

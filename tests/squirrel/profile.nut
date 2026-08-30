@@ -7,16 +7,24 @@ catch (e) {
   clock_func = require("datetime").clock
 }
 
-function profile_it(cnt, f) {//for quirrel version
-  local res = 0
-  for (local i = 0; i < cnt; ++i) {
+function profile_it(cnt, f) {
+  local n = 1
+  local total = 0.0
+  while (true) {
     local start = clock_func()
-    f()
-    local measured = clock_func() - start
-    if (i == 0 || measured < res)
-      res = measured;
+    for (local i = 0; i < n; ++i) f()
+    total = clock_func() - start
+    if (total >= 0.5 || n >= 1000000000) break
+    local per = total / n
+    if (per < 1e-9) per = 1e-9
+    local nxt = (0.5 / per * 1.2).tointeger()
+    if (nxt > 100 * n) nxt = 100 * n
+    if (nxt < n + 1) nxt = n + 1
+    if (nxt > 1000000000) nxt = 1000000000
+    n = nxt
   }
-  return res / 1.0
+  ::PROFILE_N <- n
+  return total / n
 }
 
 return profile_it

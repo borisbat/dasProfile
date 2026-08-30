@@ -1,5 +1,5 @@
 	TOTAL_NUMBERS = 10000
-	TOTAL_TIMES = 100
+	TOTAL_TIMES = 4
 
     function mk_float(i)
         return i + (i/TOTAL_NUMBERS)
@@ -22,5 +22,5 @@
 
   loadfile("profile.lua")()
   ---
-    io.write(string.format("\"string2float\", %.8f, %d\n", profile_it(PROFILE_RUNS, function () update(nums) end), PROFILE_RUNS))
+    io.write(string.format("\"string2float\", %.8f, %d\n", profile_it(PROFILE_RUNS, function () update(nums) end), PROFILE_N))
 

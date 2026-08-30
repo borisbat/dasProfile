@@ -48,4 +48,4 @@ function test(){
   t.sort(cmp)
 }
 
-print("\"sort\", " + profile_it(10, test) + ", 10\n");
+print("\"sort\", " + profile_it(10, test) + ", " + ::PROFILE_N + "\n");

@@ -97,7 +97,7 @@ def mainTreeNode {
     var tree : Node?
     var cur = 5
     var res = 0
-    for (i in range(1, 1000000)) {
+    for (i in range(1, 20000)) {
         let a = i % 3
         cur = (cur * 57 + 43) % 10007
         if (a == 0) {
@@ -118,12 +118,12 @@ def mainTreeNode {
 
 [export, no_aot, no_jit]
 def main {
-    profile(BENCH_RUNS, "tree")  <| $() {
+    bench("tree") <| $() {
         mainTreeNode()
     }
     if (is_cpp_time()) {
         cpp_label()
-        profile(BENCH_RUNS, "tree")  <| $() {
+        bench("tree") <| $() {
             testProfile::testTree()
         }
         run_files(TestFile(

@@ -41,13 +41,13 @@ def init(var objects : array<NObject>) {
 def main {
     var objects : array<NObject>
     init(objects)
-    profile(BENCH_RUNS, "particles kinematics") <| $() {
-        testSim2I(objects, 100)
+    bench("particles kinematics") <| $() {
+        testSim2I(objects, 10)
     }
     if (is_cpp_time()) {
         cpp_label()
-        profile(BENCH_RUNS, "particles kinematics") <| $() {
-            testProfile::testParticlesI(100)
+        bench("particles kinematics") <| $() {
+            testProfile::testParticlesI(10)
         }
         run_files(TestFile(
             luauFile = "particles.luau",

@@ -17,4 +17,4 @@ try {
     throw "no loadfile"
 } catch(e) profile_it = require("profile.nut")
 
-print("\"fibonacci loop\", " + profile_it(10, function() {fibI(6511134)}) + ", 10\n");
+print("\"fibonacci loop\", " + profile_it(10, function() {fibI(6511134)}) + ", " + ::PROFILE_N + "\n");

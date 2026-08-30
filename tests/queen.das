@@ -44,12 +44,12 @@ def test() {
 
 [export, no_aot]
 def main {
-    profile(BENCH_RUNS, "queen")  <| $() {
+    bench("queen") <| $() {
         test()
     }
     if (is_cpp_time()) {
         cpp_label()
-        profile(BENCH_RUNS, "queen")  <| $() {
+        bench("queen") <| $() {
             let size = testQueens()
             assert(size == 92)
         }

@@ -150,7 +150,7 @@ function scale_bodies(bodies, nbody, scale) {
   }
 }
 
-local n = 500000//50000000 in https://benchmarksgame-team.pages.debian.net/benchmarksgame
+local n = 33000//50000000 in https://benchmarksgame-team.pages.debian.net/benchmarksgame
 local nbody = BODIES.len()
 
 local profile_it
@@ -168,4 +168,4 @@ function test_func(){
   }
   scale_bodies(BODIES, nbody, 1/0.01)
 }
-print("\"n-bodies\", " + profile_it(10,  test_func) + ", 10\n")
+print("\"n-bodies\", " + profile_it(10,  test_func) + ", " + ::PROFILE_N + "\n")

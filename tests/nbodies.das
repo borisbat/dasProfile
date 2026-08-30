@@ -109,15 +109,15 @@ def nbodies(n) {
 def main {
     offset_momentum(g_bodies)
     energy(g_bodies)
-    profile(BENCH_RUNS, "n-bodies")  <| $() {
-        nbodies(500000)
+    bench("n-bodies") <| $() {
+        nbodies(33000)
     }
     energy(g_bodies)
     if (is_cpp_time()) {
         cpp_label()
         testNBodiesInit()
-        profile(BENCH_RUNS, "n-bodies")  <| $() {
-            testNBodiesS(500000)
+        bench("n-bodies") <| $() {
+            testNBodiesS(33000)
         }
         run_files(TestFile(
             luauFile = "nbodies.luau",

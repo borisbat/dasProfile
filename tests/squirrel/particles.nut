@@ -44,6 +44,6 @@ try {
 } catch(e) profile_it = require("profile.nut")
 
 function calc() {
-  update_several_timesI(::particles, 100)
+  update_several_timesI(::particles, 10)
 }
-print("\"particles kinematics\", " + profile_it(10, calc) + ", 10\n")
+print("\"particles kinematics\", " + profile_it(10, calc) + ", " + ::PROFILE_N + "\n")

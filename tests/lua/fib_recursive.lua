@@ -6,4 +6,4 @@ end
 
 loadfile("profile.lua")()
 
-io.write(string.format("\"fibonacci recursive\", %.8f, %d\n", profile_it(PROFILE_RUNS, function () fibR(31) end), PROFILE_RUNS))
+io.write(string.format("\"fibonacci recursive\", %.8f, %d\n", profile_it(PROFILE_RUNS, function () fibR(31) end), PROFILE_N))

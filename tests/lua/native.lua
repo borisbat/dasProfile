@@ -17,7 +17,7 @@ end
 
 local function testAdds()
     local count = 0
-    for i = 1, 10000000 do
+    for i = 1, 1000000 do
         count = addOne(count)
     end
     return count
@@ -25,9 +25,9 @@ end
 
 function test()
     local count = testAdds()
-    if count ~= 10000000 then print("failed\n", count) end
+    if count ~= 1000000 then print("failed\n", count) end
 end
 
 loadfile("profile.lua")()
 
-io.write(string.format("\"native loop\", %.8f, %d\n", profile_it(PROFILE_RUNS, test), PROFILE_RUNS))
+io.write(string.format("\"native loop\", %.8f, %d\n", profile_it(PROFILE_RUNS, test), PROFILE_N))

@@ -1,7 +1,7 @@
 function testAdds()
 {
     local count = 0;
-    for (local i = 0; i < 10000000; ++i)
+    for (local i = 0; i < 1000000; ++i)
         count = ::AddOne(count)
     return count
 }
@@ -13,4 +13,4 @@ try {
     throw "no loadfile"
 } catch(e) profile_it = require("profile.nut")
 
-print("\"native loop\", " + profile_it(10, function() {testAdds()}) + ", 10\n");
+print("\"native loop\", " + profile_it(10, function() {testAdds()}) + ", " + ::PROFILE_N + "\n");

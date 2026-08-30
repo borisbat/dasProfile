@@ -91,16 +91,25 @@ function test()
 
 end
 
+PROFILE_N = 1
+
 function profile_it(profiles, fn)
-  local res
-  for i = 1, profiles do
+  local n = 1
+  local total
+  while true do
     local start = os.clock()
-    fn()
-    local measured = os.clock() - start
-    if i == 1 or res > measured then res = measured end
+    for i = 1, n do fn() end
+    total = os.clock() - start
+    if total >= 0.5 or n >= 1000000000 then break end
+    local per = math.max(total / n, 1e-9)
+    local nxt = math.floor(0.5 / per * 1.2)
+    nxt = math.min(nxt, 100 * n)
+    nxt = math.max(nxt, n + 1)
+    n = math.min(nxt, 1000000000)
   end
-  return res
+  PROFILE_N = n
+  return total / n
 end
 
-print(string.format("\"mandelbrot\", %.8f, 10", profile_it(10, test)))
+print(string.format("\"mandelbrot\", %.8f, %d", profile_it(10, test), PROFILE_N))
 
