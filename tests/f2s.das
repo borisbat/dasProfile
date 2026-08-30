@@ -8,7 +8,7 @@ require daslib/only_nttp
 include ../config.das
 
 let TOTAL_NUMBERS = 10000
-let TOTAL_TIMES = 100
+let TOTAL_TIMES = 4
 
 [sideeffects, only_nttp]
 def f2s(nums) {
@@ -36,14 +36,14 @@ def main {
         }
     }
     var f1 = 0
-    profile(BENCH_RUNS, "float2string") <| $() {
+    bench("float2string") <| $() {
         f1 = f2s(nums)
     }
     assert(f1 == summ)
     if (is_cpp_time()) {
         cpp_label()
         var f4 = 0
-        profile(BENCH_RUNS, "float2string") <| $() {
+        bench("float2string") <| $() {
             f4 = test_f2s(nums, TOTAL_NUMBERS, TOTAL_TIMES)
         }
         //assert(f4==summ)

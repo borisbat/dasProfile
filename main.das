@@ -166,18 +166,33 @@ def compile_and_run(fileName : string; useAot : bool; useJit : bool) {
 }
 
 
+// Samples per lane, each its own context (the JIT lane its own process): a per-process
+// effect - where the child wakes up, where its DLL lands - is part of the spread.
+def samples_per_lane {
+    let s = get_env_variable("DASPROFILE_SAMPLES")
+    let n = empty(s) ? 0 : to_int(s)
+    return n < 1 ? 5 : n
+}
+
 def test_single_file(fileName : string) {
+    let samples = samples_per_lane()
     if (ENABLE_AOT) {
-        print("\"DAS AOT\", ")
-        compile_and_run(fileName, true, false)
+        for (i in range(samples)) {
+            print("\"DAS AOT\", ")
+            compile_and_run(fileName, true, false)
+        }
     }
     if (ENABLE_JIT && jit_enabled()) {
-        print("\"DAS JIT\", ")
-        run_jit_child(fileName)
+        for (i in range(samples)) {
+            print("\"DAS JIT\", ")
+            run_jit_child(fileName)
+        }
     }
     if (ENABLE_INTERPRETER) {
-        print("\"DAS INTERPRETER\", ")
-        compile_and_run(fileName, false, false)
+        for (i in range(samples)) {
+            print("\"DAS INTERPRETER\", ")
+            compile_and_run(fileName, false, false)
+        }
     }
     if (ENABLE_AOT || ENABLE_JIT || ENABLE_INTERPRETER) {
         print("\n\n")
@@ -536,8 +551,15 @@ def make_entries {
 
 struct private ResultEntry {
     language : string
-    time     : double
-    count    : int
+    time     : double   //! median of samples
+    count    : int      //! reps per sample the budget chose
+    samples  : array<double>
+}
+
+def private median_of(var values : array<double>) : double {
+    sort(values)
+    let n = length(values)
+    return (n & 1) == 1 ? values[n / 2] : (values[n / 2 - 1] + values[n / 2]) * 0.5lf
 }
 
 struct private Report {
@@ -554,9 +576,24 @@ struct private Report {
 def private collect(lang_set : table<string>; entries : array<ProfileEntry>) : table<string; array<ResultEntry>> {
     var result : table<string; array<ResultEntry>>
     for (e in entries) {
-        if (lang_set |> key_exists(e.language)) {
-            result[e.category] |> emplace(
-                ResultEntry(language = e.language, time = e.time, count = e.count))
+        if (!(lang_set |> key_exists(e.language))) {
+            continue
+        }
+        var found = false
+        for (r in result[e.category]) {
+            if (r.language == e.language) {
+                r.samples |> push(e.time)
+                found = true
+                break
+            }
+        }
+        if (!found) {
+            result[e.category] |> emplace <| ResultEntry(language = e.language, time = e.time, count = e.count, samples <- [e.time])
+        }
+    }
+    for (rows in values(result)) {
+        for (r in rows) {
+            r.time = median_of(r.samples)
         }
     }
     return <- result

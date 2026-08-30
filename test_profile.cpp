@@ -908,7 +908,7 @@ int testTree() {
     Tree tree;
     int cur = 5;
     int res = 0;
-    for(int i = 1; i < 1000000; i++) {
+    for(int i = 1; i < 20000; i++) {
         int mode = i % 3;
         cur = (cur * 57 + 43) % 10007;
         if ( mode == 0 ) {
@@ -977,7 +977,7 @@ int testQueens() {
 
 int testNativeLoop() {
     int count = 0;
-    for (int i = 0; i < 10000000; i++) {
+    for (int i = 0; i < 1000000; i++) {
         count = AddOne(count);
     }
     return count;
@@ -1032,7 +1032,7 @@ namespace snorm {
         int i;
         for (i = 0; i < n; i++)
             u[i] = 1;
-        for (i = 0; i < 10; i++) {
+        for (i = 0; i < 2; i++) {
             mult_AtAv(u, v, n);
             mult_AtAv(v, u, n);
         }

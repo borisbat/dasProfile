@@ -78,7 +78,7 @@ local function main()
     local cur = 5
     local res = 0
 
-    for i = 1, 1000000 do
+    for i = 1, 20000 do
         local a = i % 3
         cur = (cur * 57 + 43) % 10007
         if a == 0 then
@@ -94,4 +94,4 @@ local function main()
     --print(res)
 end
 
-io.write(string.format("\"tree\", %.8f, %d\n", profile_it(PROFILE_RUNS, function () main() end), PROFILE_RUNS))
+io.write(string.format("\"tree\", %.8f, %d\n", profile_it(PROFILE_RUNS, function () main() end), PROFILE_N))

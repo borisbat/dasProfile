@@ -1,6 +1,6 @@
 //-file:plus-string
 const TOTAL_NUMBERS = 10000;
-const TOTAL_TIMES = 100;
+const TOTAL_TIMES = 4;
 
 function mk_float(i) {
     return i + (i / TOTAL_NUMBERS);
@@ -27,4 +27,4 @@ try {
     throw "no loadfile"
 } catch(e) profile_it = require("profile.nut")
 
-print("\"string2float\", " + profile_it(10, @() update(nums) ) + ", 10\n");
+print("\"string2float\", " + profile_it(10, @() update(nums) ) + ", " + ::PROFILE_N + "\n");

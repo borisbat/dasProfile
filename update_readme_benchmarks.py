@@ -132,8 +132,10 @@ def build_snapshot(profiles: list[tuple[Path, dict[str, Any]]], readme_path: Pat
 
     lines = ["## Benchmark Snapshot",
              "",
-             "Per-platform captures. Lower is better. The fastest result in each row is in bold. "
-             "`-` means no value for that runtime on that benchmark."]
+             "Per-platform captures. A cell is the median of five samples, each its own process; "
+             "a sample runs the kernel as many times as fit a 0.5 s budget and reports the per-run time, "
+             "and `±` is half the sample range as a share of the median. Lower is better. "
+             "The fastest result in each row is in bold. `-` means no value for that runtime on that benchmark."]
 
     for path, data in profiles:
         lines.append("")
@@ -228,7 +230,8 @@ def validate_row(section_name: str, test_name: str, row: Any) -> dict[str, dict[
             raise ValueError(
                 f"Section {section_name!r}, row {test_name!r}, language {language!r} has invalid count"
             )
-        entries[language] = {"time": float(time), "count": count}
+        samples = item.get("samples") or []
+        entries[language] = {"time": float(time), "count": count, "samples": [float(x) for x in samples]}
     return entries
 
 
@@ -237,7 +240,11 @@ def format_cell(entry: dict[str, Any] | None, best_time: float) -> str:
         return "-"
     value = f"{entry['time']:.6f}s"
     if abs(entry["time"] - best_time) <= 1e-12:
-        return f"**{value}**"
+        value = f"**{value}**"
+    samples = entry.get("samples") or []
+    if len(samples) >= 2 and entry["time"] > 0:
+        spread = (max(samples) - min(samples)) / 2 / entry["time"]
+        value = f"{value} ±{spread * 100:.0f}%"
     return value
 
 

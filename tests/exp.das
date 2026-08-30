@@ -27,14 +27,14 @@ def verifyExp(f) {
 [export, no_aot]
 def main {
     var f1 = 0.
-    profile(BENCH_RUNS, "exp loop") <| $() {
+    bench("exp loop") <| $() {
         f1 = expLoop(1000000)
     }
     verifyExp(f1)
     if (is_cpp_time()) {
         var f4 = 0.
         cpp_label()
-        profile(BENCH_RUNS, "exp loop") <| $() {
+        bench("exp loop") <| $() {
             f4 = testProfile::testExpLoop(1000000)
         }
         verifyExp(f4)

@@ -187,10 +187,10 @@ local ts0 = os.clock()
 
 
 io.write(string.format("\"sha256\", %.8f, %d\n", profile_it(PROFILE_RUNS, function ()
-    for i = 1, 1024 do
+    for i = 1, 32 do
         sha256(input)
     end
-end), PROFILE_RUNS))
+end), PROFILE_N))
 
 local ts1 = os.clock()
 

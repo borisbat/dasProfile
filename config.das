@@ -2,6 +2,8 @@ options gen2
 options _comment_hygiene = true
 require daslib/fio
 require daslib/strings
+require jobque
+require math
 
 let TEST_JAVASCRIPT = true
 let TEST_LUAU = true
@@ -11,6 +13,39 @@ let TEST_SQUIRREL = true
 let TEST_CSHARP = true
 let TEST_MONO_INTERPRETER = true
 let BENCH_RUNS = 10
+let BENCH_BUDGET_SEC = 0.5lf
+
+[no_jit, no_aot]
+def bench(name : string; op : block) : float {
+    //! dastest's model: one call calibrates, each batch under the budget regrows the count
+    //! from what it measured (1.2x the projection, at most 100x), the batch that meets it is reported
+    let budget_ns = int64(BENCH_BUDGET_SEC * 1000000000.0lf)
+    var reps = 1l
+    var total_ns = 0l
+    while (true) {
+        let start = ref_time_ticks()
+        for (i in range64(reps)) {
+            op()
+        }
+        total_ns = get_time_nsec(start)
+        if (total_ns >= budget_ns || reps >= 1000000000l) {
+            break
+        }
+        let per_op_ns = max(double(total_ns) / double(reps), 1.0lf)
+        var next = int64(double(budget_ns) / per_op_ns * 1.2lf)
+        next = min(next, 100l * reps)
+        next = max(next, reps + 1l)
+        reps = min(next, 1000000000l)
+    }
+    let per_op = double(total_ns) / 1000000000.0lf / double(reps)
+    print("\"{name}\", {per_op:.9f}, {reps}\n")
+    return float(per_op)
+}
+
+[init, no_jit, no_aot]
+def pin_benchmark_thread {
+    set_current_thread_affinity(get_current_processor(), true)
+}
 
 [no_jit, no_aot]
 def native_executable(path_no_ext : string) {

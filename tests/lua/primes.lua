@@ -21,5 +21,5 @@ end
 
 loadfile("profile.lua")()
 
-io.write(string.format("\"primes loop\", %.8f, %d\n", profile_it(PROFILE_RUNS, function () primes(14000) end), PROFILE_RUNS))
+io.write(string.format("\"primes loop\", %.8f, %d\n", profile_it(PROFILE_RUNS, function () primes(14000) end), PROFILE_N))
 

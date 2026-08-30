@@ -32,14 +32,14 @@ def primes(n) {
 [export, no_aot]
 def main {
     var f1 = 0
-    profile(BENCH_RUNS, "primes loop") <| $() {
+    bench("primes loop") <| $() {
         f1 = primes(14000)
     }
     assert(f1 == 1652)
     if (is_cpp_time()) {
         cpp_label()
         var f3 = 0
-        profile(BENCH_RUNS, "primes loop") <| $() {
+        bench("primes loop") <| $() {
             f3 = testProfile::testPrimes(14000)
         }
         assert(f3 == 1652)

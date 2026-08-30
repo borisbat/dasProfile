@@ -1,6 +1,6 @@
 function testAdds() {
     let count = 0
-    for (let i = 0; i < 10000000; ++i) {
+    for (let i = 0; i < 1000000; ++i) {
         count = AddOne(count)
     }
     return count
@@ -10,23 +10,29 @@ function timeStamp() {
     return performance.now()
 }
 
-function profile(name, count, testFn) {
-    let best = 100500
-    let remaining = count
-    while (remaining > 0) {
-        const t0 = timeStamp()
-        testFn()
-        const t1 = timeStamp()
-        best = Math.min(best, t1 - t0)
-        remaining -= 1
+function profile(tname, cnt, testFn) {
+    let n = 1
+    let total = 0
+    while (true) {
+        const start = timeStamp()
+        for (let i = 0; i < n; ++i) {
+            testFn()
+        }
+        total = timeStamp() - start
+        if (total >= 500.0 || n >= 1000000000) break
+        const per = Math.max(total / n, 1e-6)
+        let next = Math.floor(500.0 / per * 1.2)
+        next = Math.min(next, 100 * n)
+        next = Math.max(next, n + 1)
+        n = Math.min(next, 1000000000)
     }
-    print('"' + name + '", ' + (best / 1000.0) + ', ' + count)
+    print('"' + tname + '", ' + (total / 1000.0 / n) + ', ' + n)
 }
 
 function performance_tests() {
     profile("native loop", 10, function () {
         const count = testAdds()
-        if (count !== 10000000) {
+        if (count !== 1000000) {
             throw new Error("native loop failed: " + count)
         }
     })

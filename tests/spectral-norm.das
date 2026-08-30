@@ -58,7 +58,7 @@ def test {
     for (i in range(N)) {
         u[i] = 1.0lf
     }
-    for (i in range(10)) {
+    for (i in range(2)) {
         mult_AtAv(u, v)
         mult_AtAv(v, u)
     }
@@ -71,13 +71,13 @@ def test {
 def main {
     let ref = 1.274224153lf
     var f1 : double
-    profile(BENCH_RUNS, "spectral norm") <| $() {
+    bench("spectral norm") <| $() {
         f1 = test()
     }
     assert(abs(f1 - ref) < 1e-5lf, "spectral norm")
     if (is_cpp_time()) {
         cpp_label()
-        profile(BENCH_RUNS, "spectral norm") <| $() {
+        bench("spectral norm") <| $() {
             testSnorm()
         }
         run_files(TestFile(

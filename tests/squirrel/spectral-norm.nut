@@ -38,7 +38,7 @@ function test() {
     local v = array(N, 0);  // Initialize an array of size N with all elements set to 0
     local t = array(N, 0);  // Initialize an array of size N with all elements set to 0
 
-    for (local i = 0; i < 10; i++) {
+    for (local i = 0; i < 2; i++) {
         AtAv(u, v, t, N);
         AtAv(v, u, t, N);
     }
@@ -61,4 +61,4 @@ try {
     throw "no loadfile"
 } catch(e) profile_it = require("profile.nut")
 
-print("\"spectral norm\", " + profile_it(10, test) + ", 10\n");
+print("\"spectral norm\", " + profile_it(10, test) + ", " + ::PROFILE_N + "\n");

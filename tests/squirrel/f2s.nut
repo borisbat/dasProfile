@@ -1,5 +1,5 @@
 const TOTAL_NUMBERS = 10000;
-const TOTAL_TIMES = 100;
+const TOTAL_TIMES = 4;
 
 function mk_float(i) {
     return i + (i / TOTAL_NUMBERS);
@@ -31,4 +31,4 @@ try {
 } catch(e) profile_it = require("profile.nut")
 
 // Output string
-print("\"float2string\", " + profile_it(10, @() update(nums) ) + ", 10\n");
+print("\"float2string\", " + profile_it(10, @() update(nums) ) + ", " + ::PROFILE_N + "\n");

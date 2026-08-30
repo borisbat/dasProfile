@@ -54,7 +54,7 @@ function test()
     local u, v, t = {}, {}, {}
     for i=1,N do u[i] = 1 end
 
-    for i=1,10 do AtAv(u, v, t, N) AtAv(v, u, t, N) end
+    for i=1,2 do AtAv(u, v, t, N) AtAv(v, u, t, N) end
 
     local vBv, vv = 0, 0
     for i=1,N do
@@ -68,5 +68,5 @@ end
 
 loadfile("profile.lua")()
 
-io.write(string.format("\"spectral norm\", %.8f, %d\n", profile_it(PROFILE_RUNS, function () test() end), PROFILE_RUNS))
+io.write(string.format("\"spectral norm\", %.8f, %d\n", profile_it(PROFILE_RUNS, function () test() end), PROFILE_N))
 

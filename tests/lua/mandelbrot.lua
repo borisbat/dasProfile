@@ -93,5 +93,5 @@ end
 
 loadfile("profile.lua")()
 
-io.write(string.format("\"mandelbrot\", %.8f, %d\n", profile_it(PROFILE_RUNS, test), PROFILE_RUNS))
+io.write(string.format("\"mandelbrot\", %.8f, %d\n", profile_it(PROFILE_RUNS, test), PROFILE_N))
 

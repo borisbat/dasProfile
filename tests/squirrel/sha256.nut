@@ -129,10 +129,10 @@ try {
 local res = "";
 local start = clock_func();
 print("\"sha256\", " + profile_it(10, function() {
-    for (local i = 0; i < 1024; ++i) {
+    for (local i = 0; i < 32; ++i) {
         res = sha256(input);
     }
-}) + ", 10\n");
+}) + ", " + ::PROFILE_N + "\n");
 local elapsed = clock_func() - start;
 
 assert(sha256(input) == "8adcaee60bb05a9964a1df12d2f007adcb8f3fa20ff7d1ecfde0a2ac301ff412");

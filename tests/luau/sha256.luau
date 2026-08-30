@@ -125,24 +125,33 @@ end
 
 local input = string.rep(".", 1024)
 
+PROFILE_N = 1
+
 function profile_it(profiles, fn)
-  local res
-  for i = 1, profiles do
+  local n = 1
+  local total
+  while true do
     local start = os.clock()
-    fn()
-    local measured = os.clock() - start
-    if i == 1 or res > measured then res = measured end
+    for i = 1, n do fn() end
+    total = os.clock() - start
+    if total >= 0.5 or n >= 1000000000 then break end
+    local per = math.max(total / n, 1e-9)
+    local nxt = math.floor(0.5 / per * 1.2)
+    nxt = math.min(nxt, 100 * n)
+    nxt = math.max(nxt, n + 1)
+    n = math.min(nxt, 1000000000)
   end
-  return res
+  PROFILE_N = n
+  return total / n
 end
 
 local ts0 = os.clock()
 
-print(string.format("\"sha256\", %.8f, 10", profile_it(10, function ()
-    for i = 1, 1024 do
+print(string.format("\"sha256\", %.8f, %d", profile_it(10, function ()
+    for i = 1, 32 do
         sha256(input)
     end
-end)))
+end), PROFILE_N))
 
 local ts1 = os.clock()
 

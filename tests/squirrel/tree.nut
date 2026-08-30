@@ -80,7 +80,7 @@ function testTree() {
     local cur = 5;
     local res = 0;
 
-    for (local i = 1; i < 1000000; ++i) {
+    for (local i = 1; i < 20000; ++i) {
         local a = i % 3;
         cur = (cur * 57 + 43) % 10007;
         if (a == 0) {
@@ -103,4 +103,4 @@ try {
     throw "no loadfile"
 } catch(e) profile_it = require("profile.nut")
 
-print("\"tree\", " + profile_it(10, testTree) + ", 10\n");
+print("\"tree\", " + profile_it(10, testTree) + ", " + ::PROFILE_N + "\n");
