@@ -36,7 +36,7 @@ function testQueens() {
 }
 
 function timeStamp() {
-    return Date.now()
+    return performance.now()
 }
 
 function profile(name, count, testFn) {

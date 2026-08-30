@@ -37,7 +37,7 @@ function shallowCopy(array) {
 }
 
 function timeStamp() {
-    return Date.now()
+    return performance.now()
 }
 
 function profile(name, count, testFn) {

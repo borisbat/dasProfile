@@ -17,9 +17,9 @@ message(STATUS "daslang SDK root: ${DAS_SDK_ROOT}")
 set(PROFILE_MODULE_DIR "${DAS_SDK_ROOT}/modules/dasProfile")
 set(PROFILE_EXAMPLES_DIR "${DAS_SDK_ROOT}/examples/profile")
 
-set(LUA_VERSION "5.5.0")
+set(LUA_VERSION "5.5.1")
 set(LUA_URL "https://www.lua.org/ftp/lua-${LUA_VERSION}.tar.gz")
-set(LUA_URL_HASH "SHA256=57ccc32bbbd005cab75bcc52444052535af691789dba2b9016d5c50640d68b3d")
+set(LUA_URL_HASH "SHA256=1c4b4068d67061f2a2231ad2b5422e77acea1487ea9890f6320af614f4373dce")
 
 FetchContent_Declare(lua_src
     URL "${LUA_URL}"
@@ -32,6 +32,18 @@ if (NOT lua_src_POPULATED)
 endif()
 
 set(LUA_SRC_DIR "${lua_src_SOURCE_DIR}/src")
+
+# lua.c opens whatever linit.c lists; profile_native (AddOne + a monotonic clock)
+# joins that list so plain Lua has a C call to measure and a sub-ms timer.
+set(LUA_LINIT_PATCHED "${CMAKE_CURRENT_BINARY_DIR}/lua_linit_profile.c")
+file(READ "${LUA_SRC_DIR}/linit.c" LUA_LINIT_SOURCE)
+string(REPLACE "#include \"lauxlib.h\"" "#include \"lauxlib.h\"\nint luaopen_profile_native(lua_State *L);" LUA_LINIT_SOURCE "${LUA_LINIT_SOURCE}")
+string(REPLACE "  {NULL, NULL}\n};" "  {\"profile_native\", luaopen_profile_native},\n  {NULL, NULL}\n};" LUA_LINIT_SOURCE "${LUA_LINIT_SOURCE}")
+string(REPLACE "  lua_assert((mask >> 1) == LUA_UTF8LIBK);\n" "" LUA_LINIT_SOURCE "${LUA_LINIT_SOURCE}")
+if (NOT LUA_LINIT_SOURCE MATCHES "luaopen_profile_native")
+    message(FATAL_ERROR "linit.c of Lua ${LUA_VERSION} has no '{NULL, NULL}' stdlibs sentinel to hang profile_native on")
+endif()
+file(WRITE "${LUA_LINIT_PATCHED}" "${LUA_LINIT_SOURCE}")
 set(LUA_CORE_SOURCES
     ${LUA_SRC_DIR}/lapi.c
     ${LUA_SRC_DIR}/lcode.c
@@ -66,7 +78,8 @@ set(LUA_LIB_SOURCES
     ${LUA_SRC_DIR}/lstrlib.c
     ${LUA_SRC_DIR}/ltablib.c
     ${LUA_SRC_DIR}/lutf8lib.c
-    ${LUA_SRC_DIR}/linit.c
+    ${LUA_LINIT_PATCHED}
+    ${CMAKE_CURRENT_SOURCE_DIR}/hosts/profile_lua_native.c
 )
 
 add_library(profileLua STATIC
@@ -106,7 +119,7 @@ add_custom_command(TARGET profileLuaCli POST_BUILD
     COMMENT "Staging Lua interpreter into SDK examples/profile/tests/lua"
 )
 
-set(LUAU_VERSION "0.720")
+set(LUAU_VERSION "0.736")
 FetchContent_Declare(luau_src
     GIT_REPOSITORY https://github.com/luau-lang/luau.git
     GIT_TAG ${LUAU_VERSION}
@@ -131,12 +144,22 @@ set(LUAU_BUILD_WEB OFF CACHE BOOL "" FORCE)
 set(LUAU_WERROR OFF CACHE BOOL "" FORCE)
 add_subdirectory(${luau_src_SOURCE_DIR} ${luau_src_BINARY_DIR} EXCLUDE_FROM_ALL)
 
+# The stock CLI has no way to register a C function; the native-loop row runs
+# through this host, which is the CLI's file runner plus a global AddOne.
+add_executable(profileLuauHost ${CMAKE_CURRENT_SOURCE_DIR}/hosts/profile_luau_host.cpp)
+target_compile_features(profileLuauHost PRIVATE cxx_std_17)
+target_link_libraries(profileLuauHost PRIVATE Luau.Compiler Luau.VM Luau.CodeGen)
+set_target_properties(profileLuauHost PROPERTIES OUTPUT_NAME luau_host)
+
 add_custom_target(stageProfileLuau ALL
     COMMAND ${CMAKE_COMMAND} -E make_directory "${PROFILE_EXAMPLES_DIR}/tests/luau"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "$<TARGET_FILE:Luau.Repl.CLI>"
         "${PROFILE_EXAMPLES_DIR}/tests/luau/$<TARGET_FILE_NAME:Luau.Repl.CLI>"
-    DEPENDS Luau.Repl.CLI
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "$<TARGET_FILE:profileLuauHost>"
+        "${PROFILE_EXAMPLES_DIR}/tests/luau/$<TARGET_FILE_NAME:profileLuauHost>"
+    DEPENDS Luau.Repl.CLI profileLuauHost
     COMMENT "Staging Luau interpreter into SDK examples/profile/tests/luau"
 )
 
@@ -144,7 +167,7 @@ add_custom_target(stageProfileLuau ALL
 # requires a branch/tag ref — `git fetch --depth=1 <sha>` is rejected by the
 # server unless it sets uploadpack.allowAnySHA1InWant=true (GitHub does not).
 # Drop GIT_SHALLOW so the full repo is cloned and then checked out at the SHA.
-set(QUIRREL_GIT_TAG "dec4877203e5cd374658c9cfe7e1553b22140920")
+set(QUIRREL_GIT_TAG "9878c4873fb5f06b163f8d4beffcbbc1bdae38e3")
 FetchContent_Declare(quirrel_src
     GIT_REPOSITORY https://github.com/GaijinEntertainment/quirrel.git
     GIT_TAG ${QUIRREL_GIT_TAG}
@@ -158,18 +181,27 @@ if (NOT MSVC)
     target_compile_options(quirrel-compiler PRIVATE -fexceptions)
 endif()
 
+add_executable(profileSqHost ${CMAKE_CURRENT_SOURCE_DIR}/hosts/profile_sq_host.cpp)
+target_compile_features(profileSqHost PRIVATE cxx_std_17)
+target_link_libraries(profileSqHost PRIVATE squirrel sqstdlib sqmodules quirrel-compiler)
+target_include_directories(profileSqHost PRIVATE "${quirrel_src_SOURCE_DIR}/sqrat/include")
+set_target_properties(profileSqHost PROPERTIES OUTPUT_NAME sq_host)
+
 add_custom_target(stageProfileQuirrel ALL
     COMMAND ${CMAKE_COMMAND} -E make_directory "${PROFILE_EXAMPLES_DIR}/tests/squirrel"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "$<TARGET_FILE:sq>"
         "${PROFILE_EXAMPLES_DIR}/tests/squirrel/$<TARGET_FILE_NAME:sq>"
-    DEPENDS sq
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "$<TARGET_FILE:profileSqHost>"
+        "${PROFILE_EXAMPLES_DIR}/tests/squirrel/$<TARGET_FILE_NAME:profileSqHost>"
+    DEPENDS sq profileSqHost
     COMMENT "Staging Quirrel interpreter into SDK examples/profile/tests/squirrel"
 )
 
-set(QUICKJS_VERSION "2025-09-13-2")
+set(QUICKJS_VERSION "2026-06-04")
 set(QUICKJS_URL "https://bellard.org/quickjs/quickjs-${QUICKJS_VERSION}.tar.xz")
-set(QUICKJS_URL_HASH "SHA256=996c6b5018fc955ad4d06426d0e9cb713685a00c825aa5c0418bd53f7df8b0b4")
+set(QUICKJS_URL_HASH "SHA256=b376e839b322978313d929fd20663b11ba58b75df5a46c126dd19ea2fa70ad2a")
 
 if (WIN32)
     # Bellard's QuickJS doesn't ship Windows binaries and there's no winget/
@@ -185,6 +217,7 @@ if (WIN32)
         get_filename_component(MSYS2_MAKE_DIR "${MSYS2_MAKE}" DIRECTORY)
         set(QUICKJS_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/quickjs-src")
         set(QUICKJS_EXECUTABLE_PATH "${QUICKJS_SOURCE_DIR}/qjs.exe")
+        set(QUICKJS_HOST_EXECUTABLE_PATH "${QUICKJS_SOURCE_DIR}/qjs_host.exe")
         # Generated build wrapper: prepend MinGW + MSYS2 dirs to PATH, chdir
         # to source, invoke `make qjs.exe`. cmd doesn't search cwd for
         # executables by default, so msvc-style "minilua" mistakes don't
@@ -194,18 +227,22 @@ if (WIN32)
         file(TO_NATIVE_PATH "${QUICKJS_SOURCE_DIR}" QJS_SRC_NATIVE)
         set(QJS_WRAPPER "${CMAKE_CURRENT_BINARY_DIR}/build_qjs_mingw.bat")
         file(WRITE "${QJS_WRAPPER}"
-"@echo off\r\nset PATH=${MINGW_GCC_DIR_NATIVE};${MSYS2_MAKE_DIR_NATIVE};%PATH%\r\ncd /d \"${QJS_SRC_NATIVE}\" || exit /b 1\r\nmake qjs.exe\r\nexit /b %ERRORLEVEL%\r\n")
+"@echo off\r\nset PATH=${MINGW_GCC_DIR_NATIVE};${MSYS2_MAKE_DIR_NATIVE};%PATH%\r\ncd /d \"${QJS_SRC_NATIVE}\" || exit /b 1\r\nmake -f quickjs_host.mk qjs.exe qjs_host.exe\r\nexit /b %ERRORLEVEL%\r\n")
 
         ExternalProject_Add(profileQuickJs
             URL ${QUICKJS_URL}
             URL_HASH ${QUICKJS_URL_HASH}
             DOWNLOAD_EXTRACT_TIMESTAMP TRUE
             SOURCE_DIR ${QUICKJS_SOURCE_DIR}
+            PATCH_COMMAND ${CMAKE_COMMAND} -E copy
+                "${CMAKE_CURRENT_SOURCE_DIR}/hosts/profile_qjs_host.c"
+                "${CMAKE_CURRENT_SOURCE_DIR}/hosts/quickjs_host.mk"
+                "${QUICKJS_SOURCE_DIR}"
             CONFIGURE_COMMAND ""
             BUILD_IN_SOURCE TRUE
             BUILD_COMMAND cmd /c "${QJS_WRAPPER}"
             INSTALL_COMMAND ""
-            BUILD_BYPRODUCTS ${QUICKJS_EXECUTABLE_PATH}
+            BUILD_BYPRODUCTS ${QUICKJS_EXECUTABLE_PATH} ${QUICKJS_HOST_EXECUTABLE_PATH}
         )
 
         add_custom_target(stageProfileQuickJs ALL
@@ -213,6 +250,9 @@ if (WIN32)
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${QUICKJS_EXECUTABLE_PATH}"
                 "${PROFILE_EXAMPLES_DIR}/tests/js/qjs.exe"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${QUICKJS_HOST_EXECUTABLE_PATH}"
+                "${PROFILE_EXAMPLES_DIR}/tests/js/qjs_host.exe"
             DEPENDS profileQuickJs
             COMMENT "Staging QuickJS interpreter into SDK examples/profile/tests/js"
         )
@@ -228,17 +268,22 @@ else()
 
     set(QUICKJS_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/quickjs-src")
     set(QUICKJS_EXECUTABLE_PATH "${QUICKJS_SOURCE_DIR}/qjs")
+    set(QUICKJS_HOST_EXECUTABLE_PATH "${QUICKJS_SOURCE_DIR}/qjs_host")
 
     ExternalProject_Add(profileQuickJs
         URL ${QUICKJS_URL}
         URL_HASH ${QUICKJS_URL_HASH}
         DOWNLOAD_EXTRACT_TIMESTAMP TRUE
         SOURCE_DIR ${QUICKJS_SOURCE_DIR}
+        PATCH_COMMAND ${CMAKE_COMMAND} -E copy
+            "${CMAKE_CURRENT_SOURCE_DIR}/hosts/profile_qjs_host.c"
+            "${CMAKE_CURRENT_SOURCE_DIR}/hosts/quickjs_host.mk"
+            "${QUICKJS_SOURCE_DIR}"
         CONFIGURE_COMMAND ""
         BUILD_IN_SOURCE TRUE
-        BUILD_COMMAND ${PROFILE_MAKE_PROGRAM} qjs
+        BUILD_COMMAND ${PROFILE_MAKE_PROGRAM} -f quickjs_host.mk qjs qjs_host
         INSTALL_COMMAND ""
-        BUILD_BYPRODUCTS ${QUICKJS_EXECUTABLE_PATH}
+        BUILD_BYPRODUCTS ${QUICKJS_EXECUTABLE_PATH} ${QUICKJS_HOST_EXECUTABLE_PATH}
     )
 
     add_custom_target(stageProfileQuickJs ALL
@@ -246,12 +291,15 @@ else()
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${QUICKJS_EXECUTABLE_PATH}"
             "${PROFILE_EXAMPLES_DIR}/tests/js/qjs"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${QUICKJS_HOST_EXECUTABLE_PATH}"
+            "${PROFILE_EXAMPLES_DIR}/tests/js/qjs_host"
         DEPENDS profileQuickJs
         COMMENT "Staging QuickJS interpreter into SDK examples/profile/tests/js"
     )
 endif()
 
-set(LUAJIT_GIT_TAG "18b087cd2cd4ddc4a79782bf155383a689d5093d")
+set(LUAJIT_GIT_TAG "1ee778a4e37122d8ca7d5733c590a47dafd6b15c")
 set(LUAJIT_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/luajit-src")
 
 set(PROFILE_BUILD_INFO_FILE "${CMAKE_CURRENT_BINARY_DIR}/profile_build_info.txt")

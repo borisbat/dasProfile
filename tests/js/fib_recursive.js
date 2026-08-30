@@ -9,7 +9,7 @@ function fibR(n) {
 // infrastructure
 
 function timeStamp() {
-	return Date.now();
+	return performance.now();
 }
 
 

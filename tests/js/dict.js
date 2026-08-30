@@ -29,7 +29,7 @@ function dict(src) {
 // infrastructure
 
 function timeStamp() {
-	return Date.now();
+	return performance.now();
 }
 
 function profile(tname,cnt,testFn) {

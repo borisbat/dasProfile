@@ -30,7 +30,7 @@ function make_nums() {
 // infrastructure
 
 function timeStamp() {
-	return Date.now();
+	return performance.now();
 }
 
 

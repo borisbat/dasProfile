@@ -42,7 +42,7 @@ return Math.sqrt(vBv/vv);
 }
 
 function timeStamp() {
-	return Date.now();
+	return performance.now();
 }
 
 function profile(tname,cnt,testFn) {

@@ -108,7 +108,7 @@ function testTree() {
 // infrastructure
 
 function timeStamp() {
-    return Date.now();
+    return performance.now();
 }
 
 

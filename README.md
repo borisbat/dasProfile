@@ -108,6 +108,27 @@ Platform information:
 | float2string | 0.095155s | 0.094725s | 0.258462s | **0.070217s** | 0.174000s | 0.405035s | 0.093357s |
 | fibonacci recursive | 0.006443s | **0.003768s** | 0.005263s | 0.061901s | 0.012000s | 0.009210s | 0.007482s |
 
+## Native loop
+
+The `native loop` row is a script calling a C function ten million times. Each runtime gets the call the way its users would write it:
+
+| Runtime | Call | Source |
+| --- | --- | --- |
+| daslang | `AddOne`, bound with `addExternInline` | `test_profile.cpp` |
+| C++ | `testNativeLoop`, the same `noinline` function called from C++ | `test_profile.cpp` |
+| Lua | `profile_native.addOne`, a builtin library added to `linit.c` at configure time | `hosts/profile_lua_native.c` |
+| LuaJIT | `ffi` call into `addOne.dll` / `libaddOne.so` | `tests/lua/native.lua` |
+| Luau | `AddOne`, a global registered by `luau_host` (the CLI's file runner plus that one global) | `hosts/profile_luau_host.cpp` |
+| Quirrel | `::AddOne`, registered by `sq_host` | `hosts/profile_sq_host.cpp` |
+| QuickJS | `AddOne`, registered by `qjs_host` (built next to `qjs` by `hosts/quickjs_host.mk`) | `hosts/profile_qjs_host.c` |
+| Mono / .NET | `DllImport` of `addOne` | `tests/cs/native.cs` |
+
+The hosts run only the native row; every other row runs on the stock `luau`, `sq` and `qjs` binaries.
+
+## Timers
+
+Every lane times with a sub-microsecond clock: `ref_time_ticks` (daslang), `Stopwatch` (C#), `os.clock` (Luau, high resolution on every platform), `performance.now()` (QuickJS), `profile_native.clock` (Lua), `QueryPerformanceCounter` through `ffi` on Windows (LuaJIT). Quirrel's `clock()` is the CRT `clock()`, which advances once a millisecond on Windows until [quirrel#112](https://github.com/GaijinEntertainment/quirrel/pull/112) lands.
+
 ## Related
 
 - [daslang](https://github.com/GaijinEntertainment/daScript) — the daslang compiler and runtime

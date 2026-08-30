@@ -172,7 +172,7 @@ struct EsFunctionAnnotation : FunctionAnnotation {
             auto carg = arg->clone();
             blk->arguments.push_back(carg);
         }
-        blk->returnType = new TypeDecl(Type::tVoid);
+        blk->returnType = new TypeDecl(Type::tVoid, func->at);
         auto ann = new AnnotationDeclaration();
         ann->annotation = this;
         ann->arguments = args;
@@ -975,6 +975,14 @@ int testQueens() {
     return g_solutions;
 }
 
+int testNativeLoop() {
+    int count = 0;
+    for (int i = 0; i < 10000000; i++) {
+        count = AddOne(count);
+    }
+    return count;
+}
+
 namespace snorm {
 
     inline int A(int i, int j) {
@@ -1229,6 +1237,7 @@ public:
         addExtern<DAS_BIND_FUN(testMaxFrom1s)>(*this, lib, "testMaxFrom1s",SideEffects::modifyExternal,"testMaxFrom1s");
         addExtern<DAS_BIND_FUN(testTableSort)>(*this, lib, "testTableSort",SideEffects::modifyExternal,"testTableSort");
         addExtern<DAS_BIND_FUN(testQueens)>(*this, lib, "testQueens",SideEffects::modifyExternal,"testQueens");
+        addExtern<DAS_BIND_FUN(testNativeLoop)>(*this, lib, "testNativeLoop",SideEffects::modifyExternal,"testNativeLoop");
         addExtern<DAS_BIND_FUN(testSha256)>(*this, lib, "testSha256",SideEffects::modifyExternal,"testSha256");
         addExtern<DAS_BIND_FUN(testSnorm)>(*this, lib, "testSnorm",SideEffects::modifyExternal,"testSnorm");
         addExtern<DAS_BIND_FUN(testMandelbrot)>(*this, lib, "testMandelbrot",SideEffects::modifyExternal,"testMandelbrot");

@@ -1,8 +1,6 @@
 using System;
 using System.Diagnostics;
 using System.Timers;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 
 class HelloWorld {
 
@@ -32,24 +30,11 @@ class HelloWorld {
         return true;
     }
 
-    static List<string> solutions = new List<string>();
-
-    static void printsolution ( int[] a ) {
-        string result = "";
-        for ( int i = 0; i < N; i++ ) {
-            for ( int j = 0; j < N; j++ ) {
-                result += a[i] == j ? "X" : "-";
-                result += " ";
-            }
-            result += "\n";
-        }
-        result += "\n";
-        solutions.Add(result);
-    }
+    static int solutions = 0;
 
     static void addqueen ( int[] a, int n ) {
         if ( n == N ) {
-            printsolution(a);
+            solutions++;
         } else {
             for ( int c = 0; c < N; c++ ) {
                 if ( isplaceok(a, n, c) ) {
@@ -60,9 +45,8 @@ class HelloWorld {
         }
     }
 
-    [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
     static void test () {
-        solutions.Clear();
+        solutions = 0;
         int[] a = new int[N];
         addqueen(a, 0);
     }
@@ -70,7 +54,7 @@ class HelloWorld {
     static void Main() {
         profile(10, "queen", () => {
             test();
-            Debug.Assert(solutions.Count == 92, "The result is not correct.");
+            Debug.Assert(solutions == 92, "The result is not correct.");
         });
     }
 }
