@@ -4,9 +4,13 @@ if jit then
     ffi.cdef[[
     int addOne(int);
     ]]
-    local lib = ffi.load(jit.os == "Windows" and "addOne.dll"
-        or (jit.os == "OSX" and "./libaddOne.dylib" or "./libaddOne.so"))
-    addOne = lib.addOne
+    -- addOne is staged beside the interpreter; resolve it from the interpreter's own path, never from cwd
+    local exeIndex = -1
+    while arg and arg[exeIndex - 1] do exeIndex = exeIndex - 1 end
+    local exe = (arg and arg[exeIndex]) or ""
+    local exeDir = exe:match("^(.*)[/\\][^/\\]*$") or "."
+    local libName = jit.os == "Windows" and "addOne.dll" or (jit.os == "OSX" and "libaddOne.dylib" or "libaddOne.so")
+    addOne = ffi.load(exeDir .. "/" .. libName).addOne
 else
     addOne = profile_native.addOne
 end
