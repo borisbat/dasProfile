@@ -120,14 +120,14 @@ The `native loop` row is a script calling a C function ten million times. Each r
 | LuaJIT | `ffi` call into `addOne.dll` / `libaddOne.so` | `tests/lua/native.lua` |
 | Luau | `AddOne`, a global registered by `luau_host` (the CLI's file runner plus that one global) | `hosts/profile_luau_host.cpp` |
 | Quirrel | `::AddOne`, registered by `sq_host` | `hosts/profile_sq_host.cpp` |
-| QuickJS | `AddOne`, registered by `qjs_host` (built next to `qjs` by `hosts/quickjs_host.mk`) | `hosts/profile_qjs_host.c` |
+| QuickJS | `AddOne`, registered by `qjs_host` (built next to `qjs` by `hosts/quickjs_host.mk`; runs every QuickJS row, see Timers) | `hosts/profile_qjs_host.c` |
 | Mono / .NET | `DllImport` of `addOne` | `tests/cs/native.cs` |
 
-The hosts run only the native row; every other row runs on the stock `luau`, `sq` and `qjs` binaries.
+The Luau and Quirrel hosts run only the native row; every other row runs on the stock `luau` and `sq` binaries. `qjs_host` runs every QuickJS row.
 
 ## Timers
 
-Every lane times with a sub-microsecond clock: `ref_time_ticks` (daslang), `Stopwatch` (C#), `os.clock` (Luau, high resolution on every platform), `performance.now()` (QuickJS), `profile_native.clock` (Lua), `QueryPerformanceCounter` through `ffi` on Windows (LuaJIT). Quirrel's `clock()` is the CRT `clock()`, which advances once a millisecond on Windows until [quirrel#112](https://github.com/GaijinEntertainment/quirrel/pull/112) lands.
+Every lane times with a sub-microsecond clock: `ref_time_ticks` (daslang), `Stopwatch` (C#), `os.clock` (Luau, high resolution on every platform), `performance.now()` (QuickJS - the MinGW build only has `gettimeofday` behind it, ticking every 0.3 ms, so on Windows `qjs_host` puts `QueryPerformanceCounter` behind it), `profile_native.clock` (Lua), `QueryPerformanceCounter` through `ffi` on Windows (LuaJIT). Quirrel's `clock()` is the CRT `clock()`, which advances once a millisecond on Windows until [quirrel#112](https://github.com/GaijinEntertainment/quirrel/pull/112) lands.
 
 ## Related
 

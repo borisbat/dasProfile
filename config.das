@@ -94,7 +94,7 @@ struct TestFile {
     jsFile  : string // javascript
     monoFile  : string // csharp mono
     dotNetFile  : string // csharp .net
-    native : bool //! the row calls AddOne: luau, quirrel and quickjs run through the profile hosts
+    native : bool //! the row calls AddOne: luau and quirrel run through the profile hosts
 }
 
 let ENCODING = string([ 0xefu8, 0xbbu8, 0xbfu8])
@@ -200,7 +200,8 @@ def run_files(tf : TestFile) {
     if (TEST_JAVASCRIPT && !empty(tf.jsFile)) {
         let jsSourceRoot = "{sourceRoot}/tests/js"
         let jsRuntimeRoot = "{runtimeRoot}/tests/js"
-        let jsCompiler = tf.native ? native_executable("{jsRuntimeRoot}/qjs_host") : quickjs_executable(jsRuntimeRoot)
+        let jsHost = native_executable("{jsRuntimeRoot}/qjs_host")
+        let jsCompiler = fexist(jsHost) ? jsHost : quickjs_executable(jsRuntimeRoot)
         let jsScript = "{jsSourceRoot}/{tf.jsFile}"
         let cwd = getcwd()
         chdir(jsSourceRoot)

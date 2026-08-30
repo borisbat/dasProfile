@@ -4,6 +4,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if defined(_WIN32)
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#endif
+
 static JSValue js_AddOne(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
     int32_t n = 0;
     (void)this_val;
@@ -12,6 +17,18 @@ static JSValue js_AddOne(JSContext *ctx, JSValueConst this_val, int argc, JSValu
         return JS_EXCEPTION;
     return JS_NewInt32(ctx, n + 1);
 }
+
+#if defined(_WIN32)
+static JSValue js_performance_now(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    LARGE_INTEGER freq, now;
+    (void)this_val;
+    (void)argc;
+    (void)argv;
+    QueryPerformanceFrequency(&freq);
+    QueryPerformanceCounter(&now);
+    return JS_NewFloat64(ctx, (double)now.QuadPart * 1000.0 / (double)freq.QuadPart);
+}
+#endif
 
 int main(int argc, char **argv) {
     JSRuntime *rt;
@@ -35,6 +52,13 @@ int main(int argc, char **argv) {
 
     global = JS_GetGlobalObject(ctx);
     JS_SetPropertyStr(ctx, global, "AddOne", JS_NewCFunction(ctx, js_AddOne, "AddOne", 1));
+#if defined(_WIN32)
+    {
+        JSValue performance = JS_GetPropertyStr(ctx, global, "performance");
+        JS_SetPropertyStr(ctx, performance, "now", JS_NewCFunction(ctx, js_performance_now, "now", 0));
+        JS_FreeValue(ctx, performance);
+    }
+#endif
     JS_FreeValue(ctx, global);
 
     buf = js_load_file(ctx, &len, argv[1]);
