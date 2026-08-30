@@ -125,6 +125,10 @@ The `native loop` row is a script calling a C function ten million times. Each r
 
 The Luau and Quirrel hosts run only the native row; every other row runs on the stock `luau` and `sq` binaries. `qjs_host` runs every QuickJS row.
 
+## .NET tiering
+
+The `.NET` lane runs with `DOTNET_TC_CallCountingDelayMs=0`. By default the runtime waits 100 ms before it starts counting calls, and most rows here finish their ten samples inside that window, so they would be measured on tier-0 code (queen reads 0.00056 s that way, 0.00014 s with the delay off). Turning tiering off altogether is not the answer either: it also turns off dynamic PGO, and sha256 doubles (0.013 s to 0.030 s). With the delay at zero, hot methods reach tier-1 with PGO inside the first sample.
+
 ## Timers
 
 Every lane times with a sub-microsecond clock: `ref_time_ticks` (daslang), `Stopwatch` (C#), `os.clock` (Luau, high resolution on every platform), `performance.now()` (QuickJS - the MinGW build only has `gettimeofday` behind it, ticking every 0.3 ms, so on Windows `qjs_host` puts `QueryPerformanceCounter` behind it), `profile_native.clock` (Lua), `QueryPerformanceCounter` through `ffi` on Windows (LuaJIT). Quirrel's `clock()` is the CRT `clock()`, which advances once a millisecond on Windows until [quirrel#112](https://github.com/GaijinEntertainment/quirrel/pull/112) lands.

@@ -251,6 +251,7 @@ def run_files(tf : TestFile) {
         let cwd = getcwd()
         chdir(cscSourceRoot)
         run_and_gun_silent("{shell_quote(dotnetRunner)} build {shell_quote(dotnetProject)} -c Release -nologo -clp:ErrorsOnly -p:BenchmarkSource={shell_quote(dotnetSource)} -p:NativeLibrary={shell_quote(dotnetLibrary)} -o {shell_quote(dotnetOutput)}")
+        set_env_variable("DOTNET_TC_CallCountingDelayMs", "0")
         run_and_gun(".NET", "{dotnetLibraryEnv}{shell_quote(dotnetRunner)} {shell_quote(dotnetAssembly)}")
         chdir(cwd)
     }
