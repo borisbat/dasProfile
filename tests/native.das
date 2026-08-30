@@ -24,10 +24,20 @@ def main {
     }
     assert(10000000 == count)
     if (is_cpp_time()) {
+        cpp_label()
+        profile(BENCH_RUNS, "native loop") <| $() {
+            count = testNativeLoop()
+        }
+        assert(10000000 == count)
         run_files(TestFile(
-            asFile = "native.as",
+            native = true,
+            luauFile = "native.luau",
+            luaFile = "native.lua",
+            luaJitFile = "native.lua",
+            nutFile = "native.nut",
+            nutModifiedFile = "native.nut",
+            jsFile = "native.js",
             monoFile = "native.cs",
-            dotNetFile = "native.cs"
-        ))
+            dotNetFile = "native.cs"))
     }
 }

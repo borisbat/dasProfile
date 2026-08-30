@@ -152,7 +152,7 @@ NBodySystem.prototype.energy = function(){
 // infrastructure
 
 function timeStamp() {
-   return Date.now();
+   return performance.now();
 }
 
 

@@ -49,3 +49,6 @@ _local_*.bat
 tests/cs/test.exe
 tests/cs/.dotnet-bench/
 tests/cs/obj/
+
+# JIT DLL cache left behind by `daslang -jit main.das`.
+.jitted_scripts/

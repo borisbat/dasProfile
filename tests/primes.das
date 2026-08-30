@@ -7,6 +7,7 @@ require daslib/only_nttp
 
 include ../config.das
 
+[hint(unsafe_division_check)]
 def isprime(n) {
     for (i in range(2, n)) {
         if (n % i == 0) {

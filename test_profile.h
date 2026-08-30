@@ -116,6 +116,7 @@ DAS_MOD_API void testEsUpdate(char * pass, das::Context * ctx, das::LineInfoArg 
 DAS_MOD_API uint32_t queryEs(const das::Block & block, das::Context * context, das::LineInfoArg * at);
 
 DAS_MOD_API int testQueens();
+DAS_MOD_API int testNativeLoop();
 DAS_MOD_API double testSnorm();
 DAS_MOD_API int testMandelbrot();
 DAS_MOD_API float test_f2i ( const das::TArray<char *> & nums, int TOTAL_NUMBERS, int TOTAL_TIMES );

@@ -34,7 +34,7 @@ function test() {
 }
 
 function timeStamp() {
-  return Date.now();
+  return performance.now();
 }
 
 function profile(tname, cnt, testFn) {

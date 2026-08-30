@@ -94,6 +94,7 @@ struct TestFile {
     jsFile  : string // javascript
     monoFile  : string // csharp mono
     dotNetFile  : string // csharp .net
+    native : bool //! the row calls AddOne: luau and quirrel run through the profile hosts
 }
 
 let ENCODING = string([ 0xefu8, 0xbbu8, 0xbfu8])
@@ -155,7 +156,8 @@ def run_files(tf : TestFile) {
     if (TEST_LUAU && !empty(tf.luauFile)) {
         let luauSourceRoot = "{sourceRoot}/tests/luau"
         let luauRuntimeRoot = "{runtimeRoot}/tests/luau"
-        let luaCompiler = native_executable("{luauRuntimeRoot}/luau")
+        let luauRunner = tf.native ? "luau_host" : "luau"
+        let luaCompiler = native_executable("{luauRuntimeRoot}/{luauRunner}")
         let luaScript = "{luauSourceRoot}/{tf.luauFile}"
         let cwd = getcwd()
         chdir(luauSourceRoot)
@@ -187,7 +189,8 @@ def run_files(tf : TestFile) {
     if (TEST_SQUIRREL && !empty(tf.nutModifiedFile)) {
         let squirrelSourceRoot = "{sourceRoot}/tests/squirrel"
         let squirrelRuntimeRoot = "{runtimeRoot}/tests/squirrel"
-        let numModifiedCompiler = native_executable("{squirrelRuntimeRoot}/sq")
+        let quirrelRunner = tf.native ? "sq_host" : "sq"
+        let numModifiedCompiler = native_executable("{squirrelRuntimeRoot}/{quirrelRunner}")
         let quirrelScript = "{squirrelSourceRoot}/{tf.nutModifiedFile}"
         let cwd = getcwd()
         chdir(squirrelSourceRoot)
@@ -197,7 +200,8 @@ def run_files(tf : TestFile) {
     if (TEST_JAVASCRIPT && !empty(tf.jsFile)) {
         let jsSourceRoot = "{sourceRoot}/tests/js"
         let jsRuntimeRoot = "{runtimeRoot}/tests/js"
-        let jsCompiler = quickjs_executable(jsRuntimeRoot)
+        let jsHost = native_executable("{jsRuntimeRoot}/qjs_host")
+        let jsCompiler = fexist(jsHost) ? jsHost : quickjs_executable(jsRuntimeRoot)
         let jsScript = "{jsSourceRoot}/{tf.jsFile}"
         let cwd = getcwd()
         chdir(jsSourceRoot)
@@ -247,6 +251,7 @@ def run_files(tf : TestFile) {
         let cwd = getcwd()
         chdir(cscSourceRoot)
         run_and_gun_silent("{shell_quote(dotnetRunner)} build {shell_quote(dotnetProject)} -c Release -nologo -clp:ErrorsOnly -p:BenchmarkSource={shell_quote(dotnetSource)} -p:NativeLibrary={shell_quote(dotnetLibrary)} -o {shell_quote(dotnetOutput)}")
+        set_env_variable("DOTNET_TC_CallCountingDelayMs", "0")
         run_and_gun(".NET", "{dotnetLibraryEnv}{shell_quote(dotnetRunner)} {shell_quote(dotnetAssembly)}")
         chdir(cwd)
     }

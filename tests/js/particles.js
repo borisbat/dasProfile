@@ -53,7 +53,7 @@ function make_particles() {
 // infrastructure
 
 function timeStamp() {
-	return Date.now();
+	return performance.now();
 }
 
 

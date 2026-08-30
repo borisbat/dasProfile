@@ -89,7 +89,7 @@ function sha256(msg) {
 }
 
 function timeStamp() {
-  return Date.now();
+  return performance.now();
 }
 
 function profile(tname, cnt, testFn) {
@@ -109,13 +109,13 @@ function profile(tname, cnt, testFn) {
 
 const input = new Array(1024).fill('.'.charCodeAt(0));
 let result = '';
-const ts0 = Date.now() / 1000.0;
+const ts0 = performance.now() / 1000.0;
 profile('sha256', PROFILE_RUNS, function () {
   for (let i = 0; i < 1024; ++i) {
     result = sha256(input);
   }
 });
-const ts1 = Date.now() / 1000.0;
+const ts1 = performance.now() / 1000.0;
 
 if (sha256(input) !== '8adcaee60bb05a9964a1df12d2f007adcb8f3fa20ff7d1ecfde0a2ac301ff412') {
   print('sha256 failed');
