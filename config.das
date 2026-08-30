@@ -2,6 +2,7 @@ options gen2
 options _comment_hygiene = true
 require daslib/fio
 require daslib/strings
+require jobque
 
 let TEST_JAVASCRIPT = true
 let TEST_LUAU = true
@@ -11,6 +12,11 @@ let TEST_SQUIRREL = true
 let TEST_CSHARP = true
 let TEST_MONO_INTERPRETER = true
 let BENCH_RUNS = 10
+
+[init, no_jit, no_aot]
+def pin_benchmark_thread {
+    set_current_thread_affinity(get_current_processor(), true)
+}
 
 [no_jit, no_aot]
 def native_executable(path_no_ext : string) {
