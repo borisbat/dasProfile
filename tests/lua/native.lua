@@ -30,4 +30,4 @@ end
 
 loadfile("profile.lua")()
 
-io.write(string.format("\"native loop\", %.8f, %d\n", profile_it(PROFILE_RUNS, test), PROFILE_N))
+io.write(string.format("\"interop host calls\", %.8f, %d\n", profile_it(PROFILE_RUNS, test), PROFILE_N))
