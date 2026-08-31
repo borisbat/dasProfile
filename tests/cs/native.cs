@@ -42,7 +42,7 @@ class HelloWorld {
     }
 
     static void Main() {
-        profile(10, "native loop", () => {
+        profile(10, "interop host calls", () => {
             int count = testAdds();
             Debug.Assert(1000000==count);
         });

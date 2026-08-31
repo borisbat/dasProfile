@@ -19,13 +19,13 @@ def testAdds() {
 [export, no_aot, no_jit]
 def main {
     var count = 0
-    bench("native loop") <| $() {
+    bench("interop host calls") <| $() {
         count = testAdds()
     }
     assert(1000000 == count)
     if (is_cpp_time()) {
         cpp_label()
-        bench("native loop") <| $() {
+        bench("interop host calls") <| $() {
             count = testNativeLoop()
         }
         assert(1000000 == count)

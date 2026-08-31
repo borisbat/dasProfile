@@ -13,4 +13,4 @@ try {
     throw "no loadfile"
 } catch(e) profile_it = require("profile.nut")
 
-print("\"native loop\", " + profile_it(10, function() {testAdds()}) + ", " + ::PROFILE_N + "\n");
+print("\"interop host calls\", " + profile_it(10, function() {testAdds()}) + ", " + ::PROFILE_N + "\n");

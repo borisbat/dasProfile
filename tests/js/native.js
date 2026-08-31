@@ -30,10 +30,10 @@ function profile(tname, cnt, testFn) {
 }
 
 function performance_tests() {
-    profile("native loop", 10, function () {
+    profile("interop host calls", 10, function () {
         const count = testAdds()
         if (count !== 1000000) {
-            throw new Error("native loop failed: " + count)
+            throw new Error("interop host calls failed: " + count)
         }
     })
 }

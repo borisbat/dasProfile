@@ -31,4 +31,4 @@ function profile_it(profiles, fn)
   return total / n
 end
 
-print(string.format("\"native loop\", %.8f, %d", profile_it(10, test), PROFILE_N))
+print(string.format("\"interop host calls\", %.8f, %d", profile_it(10, test), PROFILE_N))

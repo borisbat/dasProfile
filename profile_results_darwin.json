@@ -445,7 +445,7 @@
         ]
       }
     ],
-    "native loop":[
+    "interop host calls":[
       {
         "language":"DAS INTERPRETER",
         "time":0.002481984,
@@ -1823,7 +1823,7 @@
         ]
       }
     ],
-    "native loop":[
+    "interop host calls":[
       {
         "language":"DAS AOT",
         "time":0.0012411620000000001,
