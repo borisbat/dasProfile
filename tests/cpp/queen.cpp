@@ -4,14 +4,14 @@
 
 static int g_solutions = 0;
 
-static bool isplaceok(const int * a, int n, int c) {
+bool isplaceok(const int * a, int n, int c) {
     for (int i = 0; i < n; i++) {
         if (a[i] == c || a[i] - i == c - n || a[i] + i == c + n) return false;
     }
     return true;
 }
 
-static void addqueen(int * a, int n) {
+void addqueen(int * a, int n) {
     if (n == QUEEN_N) {
         g_solutions++;
     } else {

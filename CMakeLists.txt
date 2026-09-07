@@ -398,7 +398,8 @@ set_target_properties(profileAddOne PROPERTIES
 )
 
 # The C++ lane: one program per test under tests/cpp, the shared harness in profile.h, built at
-# -O2 and staged into the runtime root beside the other lanes' hosts; hello is the startup row.
+# the configuration's default optimization (Release: -O3, MSVC /O2, what the kernels had as a
+# module) and staged into the runtime root beside the other lanes' hosts; hello is the startup row.
 # native links addOne.c as its own object, so every AddOne is a call across the C ABI.
 set(PROFILE_CPP_PROGRAMS hello dict exp f2i f2s fib_loop fib_recursive mandelbrot native nbodies particles primes queen sha256 spectral-norm table-sort tree)
 add_custom_target(stageProfileCpp ALL
@@ -414,11 +415,6 @@ foreach(prog ${PROFILE_CPP_PROGRAMS})
     add_executable(profileCpp_${prog_id} ${prog_sources})
     target_compile_features(profileCpp_${prog_id} PRIVATE cxx_std_17)
     set_target_properties(profileCpp_${prog_id} PROPERTIES OUTPUT_NAME ${prog})
-    if (MSVC)
-        target_compile_options(profileCpp_${prog_id} PRIVATE /O2)
-    else()
-        target_compile_options(profileCpp_${prog_id} PRIVATE -O2)
-    endif()
     add_custom_command(TARGET stageProfileCpp POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "$<TARGET_FILE:profileCpp_${prog_id}>"
