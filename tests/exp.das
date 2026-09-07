@@ -32,7 +32,7 @@ def main {
     verifyExp(f1)
     if (is_interp_time()) {
         run_files(TestFile(
-            cppFile = "exp.das",
+            cppFile = "exp.cpp",
             luauFile = "exp.luau",
             luaFile = "exp.lua",
             luaJitFile = "exp.lua",

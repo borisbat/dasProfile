@@ -27,7 +27,7 @@ def main {
     assert(f1 == 1781508648)
     if (is_interp_time()) {
         run_files(TestFile(
-            cppFile = "fib_loop.das",
+            cppFile = "fib_loop.cpp",
             luauFile = "fib_loop.luau",
             luaFile = "fib_loop.lua",
             luaJitFile = "fib_loop.lua",

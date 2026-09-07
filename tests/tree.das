@@ -122,7 +122,7 @@ def main {
     }
     if (is_interp_time()) {
         run_files(TestFile(
-            cppFile = "tree.das",
+            cppFile = "tree.cpp",
             luauFile = "tree.luau",
             luaFile = "tree.lua",
             luaJitFile = "tree.lua",

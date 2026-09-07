@@ -49,7 +49,7 @@ def main {
     }
     if (is_interp_time()) {
         run_files(TestFile(
-            cppFile = "mandelbrot.das",
+            cppFile = "mandelbrot.cpp",
             luauFile = "mandelbrot.luau",
             luaFile = "mandelbrot.lua",
             luaJitFile = "mandelbrot.lua",

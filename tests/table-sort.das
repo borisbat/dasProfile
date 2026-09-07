@@ -40,7 +40,7 @@ def main {
     }
     if (is_interp_time()) {
         run_files(TestFile(
-            cppFile = "table-sort.das",
+            cppFile = "table-sort.cpp",
             luaFile = "table-sort.lua",
             luaJitFile = "table-sort.lua",
             luauFile = "table-sort.luau",

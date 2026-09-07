@@ -114,7 +114,7 @@ def main {
     energy(g_bodies)
     if (is_interp_time()) {
         run_files(TestFile(
-            cppFile = "nbodies.das",
+            cppFile = "nbodies.cpp",
             luauFile = "nbodies.luau",
             luaFile = "nbodies.lua",
             luaJitFile = "nbodies.lua",

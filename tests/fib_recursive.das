@@ -23,7 +23,7 @@ def main {
     assert(f3 == 1346269)
     if (is_interp_time()) {
         run_files(TestFile(
-            cppFile = "fib_recursive.das",
+            cppFile = "fib_recursive.cpp",
             luauFile = "fib_recursive.luau",
             luaFile = "fib_recursive.lua",
             luaJitFile = "fib_recursive.lua",

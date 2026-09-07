@@ -45,7 +45,7 @@ def main {
     }
     if (is_interp_time()) {
         run_files(TestFile(
-            cppFile = "particles.das",
+            cppFile = "particles.cpp",
             luauFile = "particles.luau",
             luaFile = "particles.lua",
             luaJitFile = "particles.lua",

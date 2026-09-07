@@ -48,7 +48,7 @@ def main {
     }
     if (is_interp_time()) {
         run_files(TestFile(
-            cppFile = "queen.das",
+            cppFile = "queen.cpp",
             luauFile = "queen.luau",
             luaFile = "queen.lua",
             luaJitFile = "queen.lua",

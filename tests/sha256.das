@@ -119,7 +119,7 @@ def main {
     print("\t{1.0/dt} mb/sec\n")
     if (is_interp_time()) {
         run_files(TestFile(
-            cppFile = "sha256.das",
+            cppFile = "sha256.cpp",
             luauFile = "sha256.luau",
             luaFile = "sha256.lua",
             luaJitFile = "sha256_luajit.lua",

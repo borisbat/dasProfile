@@ -76,7 +76,7 @@ def main {
     assert(abs(f1 - ref) < 1e-5lf, "spectral norm")
     if (is_interp_time()) {
         run_files(TestFile(
-            cppFile = "spectral-norm.das",
+            cppFile = "spectral-norm.cpp",
             luaFile = "spectral-norm.lua",
             luauFile = "spectral-norm.luau",
             luaJitFile = "spectral-norm.lua",

@@ -25,7 +25,7 @@ def main {
     assert(1000000 == count)
     if (is_interp_time()) {
         run_files(TestFile(
-            cppFile = "native.das",
+            cppFile = "native.cpp",
             native = true,
             luauFile = "native.luau",
             luaFile = "native.lua",

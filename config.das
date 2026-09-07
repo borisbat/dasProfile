@@ -137,7 +137,7 @@ def profile_runtime_root() : string {
 }
 
 struct TestFile {
-    cppFile : string //! tests/cpp/<name>.das - the one program that requires testProfile, the C++ kernels
+    cppFile : string //! tests/cpp/<name>.cpp - the C++ program the CMake builds and stages beside the other lanes' hosts
     luaFile : string // lua
     luaJitFile : string // lua jit
     luauFile : string // luau
@@ -206,11 +206,8 @@ def run_files(tf : TestFile) {
     let sourceRoot = profile_source_root()
     let runtimeRoot = profile_runtime_root()
     if (TEST_CPP && !empty(tf.cppFile)) {
-        //! the C++ kernels run from tests/cpp/<name>.das in a child of the same daslang, interpreted
-        //! like every other lane's host; the child finds testProfile through the SDK's module scan
-        let dasExe = get_command_line_arguments()[0]
-        let cppScript = "{sourceRoot}/tests/cpp/{tf.cppFile}"
-        run_and_gun("C++", "{shell_quote(dasExe)} {shell_quote(cppScript)}")
+        let stem = tf.cppFile |> slice(0, length(tf.cppFile) - length(".cpp"))
+        run_and_gun("C++", shell_quote(native_executable("{runtimeRoot}/tests/cpp/{stem}")))
     }
     if (!empty(get_env_variable("DASPROFILE_DAS_ONLY"))) return
 

@@ -41,7 +41,7 @@ def main {
     assert(f1 == summ)
     if (is_interp_time()) {
         run_files(TestFile(
-            cppFile = "f2i.das",
+            cppFile = "f2i.cpp",
             luauFile = "f2i.luau",
             luaFile = "f2i.lua",
             luaJitFile = "f2i.lua",

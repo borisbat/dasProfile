@@ -38,7 +38,7 @@ def main {
     }
     if (is_interp_time()) {
         run_files(TestFile(
-            cppFile = "dict.das",
+            cppFile = "dict.cpp",
             luauFile = "dict.luau",
             luaFile = "dict.lua",
             luaJitFile = "dict.lua",

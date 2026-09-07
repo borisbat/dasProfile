@@ -37,7 +37,7 @@ def main {
     assert(f1 == 1652)
     if (is_interp_time()) {
         run_files(TestFile(
-            cppFile = "primes.das",
+            cppFile = "primes.cpp",
             luauFile = "primes.luau",
             luaFile = "primes.lua",
             luaJitFile = "primes.lua",
