@@ -318,6 +318,8 @@ def format_runtime_version(name: str, text: str) -> str:
         return f"QuickJS {line}"
     if name == "quirrel":
         return f"Quirrel {line.split(' Copyright', 1)[0]}"
+    if name == "zig":
+        return f"Zig {line}"
     return line
 
 
