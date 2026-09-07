@@ -115,7 +115,7 @@ def mainTreeNode {
     return res
 }
 
-[export, no_aot]
+[export, no_aot, no_jit]
 def main {
     bench("tree") <| $() {
         mainTreeNode()

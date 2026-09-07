@@ -14,7 +14,7 @@ def fibR(n) {
     return fibR(n - 1) + fibR(n - 2)
 }
 
-[export, no_aot]
+[export, no_aot, no_jit]
 def main {
     var f3 = 0
     bench("fibonacci recursive") <| $() {

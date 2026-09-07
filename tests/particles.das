@@ -36,7 +36,7 @@ def init(var objects : array<NObject>) {
     assert(i == length(objects))
 }
 
-[export, no_aot]
+[export, no_aot, no_jit]
 def main {
     var objects : array<NObject>
     init(objects)

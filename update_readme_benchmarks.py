@@ -138,10 +138,10 @@ def build_snapshot(profiles: list[tuple[Path, dict[str, Any]]], readme_path: Pat
              "a sample runs the kernel as many times as fit a 0.5 s budget and reports the per-run time, "
              "and `±` is half the sample range as a share of the median. Lower is better. "
              "The fastest result in each row is in bold. `-` means no value for that runtime on that benchmark. "
-             "The Startup table is the wall time of one launch of each program - start, one kernel iteration, "
-             "exit - under the interpreter, the JIT with a warm DLL cache, as a standalone exe, and as its zig "
-             "twin, with the size of each executable: a das exe links the daslang runtime library "
-             "dynamically (one copy on the box, shared by every exe), a zig exe is static."]
+             "The Startup table is hello world in every language on the boards: the wall time of one launch "
+             "the way that lane's kernels are launched (median of ten after a warm one), and the size of the "
+             "artifact the lane runs where it built one - a das exe links the daslang runtime library "
+             "dynamically, a zig exe is static."]
 
     for path, data in profiles:
         lines.append("")
@@ -194,8 +194,12 @@ def render_platform_section(path: Path, data: dict[str, Any], readme_path: Path)
     return lines
 
 
-STARTUP_COLUMNS = ("DAS INTERPRETER", "DAS JIT", "DAS EXE", "ZIG")
-STARTUP_HEADERS = ("DAS interpreter", "DAS JIT", "DAS exe", "exe size", "Zig exe", "zig size")
+STARTUP_LABELS = {
+    "DAS INTERPRETER": "DAS interpreter", "DAS JIT": "DAS JIT", "DAS EXE": "DAS exe", "C++": "C++",
+    "ZIG": "Zig", "LUAU --codegen": "Luau --codegen", "LUAU": "Luau", "LUA": "Lua",
+    "LUAJIT -joff": "LuaJIT -joff", "LUAJIT": "LuaJIT", "QUIRREL": "Quirrel", "QUICKJS": "QuickJS",
+    "MONO --interpreter": "Mono --interpreter", "MONO": "Mono", ".NET": ".NET",
+}
 
 
 def format_size(size: Any) -> str:
@@ -207,28 +211,21 @@ def format_size(size: Any) -> str:
 
 
 def render_startup_table(section: dict[str, Any]) -> list[str]:
-    """One row per program: the wall time of one launch under each lane (start, one kernel
-    iteration, exit - the kernel's own cost is in the tables above), and the artifact size
-    where the lane is an executable."""
+    """One row per runtime: the wall time of one launch of hello world the way that lane's
+    kernels are launched, and the size of the artifact the lane runs where it built one."""
     lines = [
-        "| Program | " + " | ".join(STARTUP_HEADERS) + " |",
-        "| --- | " + " | ".join("---:" for _ in STARTUP_HEADERS) + " |",
+        "| Runtime | hello world | artifact |",
+        "| --- | ---: | ---: |",
     ]
-    for test_name, row in section.items():
-        entries = validate_row("Startup", test_name, row)
+    for program, row in section.items():
+        entries = validate_row("Startup", program, row)
         if not entries:
             continue
         sizes = {item["language"]: item.get("size") for item in row if isinstance(item, dict)}
         best_time = min(entry["time"] for entry in entries.values())
-        cells = [
-            format_cell(entries.get("DAS INTERPRETER"), best_time),
-            format_cell(entries.get("DAS JIT"), best_time),
-            format_cell(entries.get("DAS EXE"), best_time),
-            format_size(sizes.get("DAS EXE")),
-            format_cell(entries.get("ZIG"), best_time),
-            format_size(sizes.get("ZIG")),
-        ]
-        lines.append(f"| {test_name} | " + " | ".join(cells) + " |")
+        for language in [item["language"] for item in row if isinstance(item, dict)]:
+            label = STARTUP_LABELS.get(language, language)
+            lines.append(f"| {label} | {format_cell(entries.get(language), best_time)} | {format_size(sizes.get(language))} |")
     return lines
 
 

@@ -16,7 +16,7 @@ def testAdds() {
     return count
 }
 
-[export, no_aot]
+[export, no_aot, no_jit]
 def main {
     var count = 0
     bench("interop host calls") <| $() {

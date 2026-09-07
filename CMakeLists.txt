@@ -397,6 +397,19 @@ set_target_properties(profileAddOne PROPERTIES
     POSITION_INDEPENDENT_CODE ON
 )
 
+# hello world as a C++ program, the C++ row of the startup table
+add_executable(profileHelloCpp ${CMAKE_CURRENT_SOURCE_DIR}/tests/cpp/hello.cpp)
+target_compile_features(profileHelloCpp PRIVATE cxx_std_17)
+set_target_properties(profileHelloCpp PROPERTIES OUTPUT_NAME hello)
+add_custom_target(stageProfileHelloCpp ALL
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROFILE_EXAMPLES_DIR}/tests/cpp"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "$<TARGET_FILE:profileHelloCpp>"
+        "${PROFILE_EXAMPLES_DIR}/tests/cpp/$<TARGET_FILE_NAME:profileHelloCpp>"
+    DEPENDS profileHelloCpp
+    COMMENT "Staging the C++ hello world into SDK examples/profile/tests/cpp"
+)
+
 add_custom_target(stageProfileAddOne ALL
     COMMAND ${CMAKE_COMMAND} -E make_directory "${PROFILE_EXAMPLES_DIR}/tests/cs"
     COMMAND ${CMAKE_COMMAND} -E make_directory "${PROFILE_EXAMPLES_DIR}/tests/lua"
@@ -487,7 +500,7 @@ add_custom_target(sync_profile_examples ALL
     COMMENT "Syncing profile scripts to SDK examples/profile"
 )
 
-add_dependencies(sync_profile_examples testProfile sync_profile_descriptor profileLuaCli stageProfileLuau stageProfileLuajit stageProfileQuirrel stageProfileQuickJs stageProfileAddOne)
+add_dependencies(sync_profile_examples testProfile sync_profile_descriptor profileLuaCli stageProfileLuau stageProfileLuajit stageProfileQuirrel stageProfileQuickJs stageProfileAddOne stageProfileHelloCpp)
 
 add_custom_target(run_profile
     COMMAND $<TARGET_FILE:DAS::daslang> "${PROFILE_EXAMPLES_DIR}/main.das"

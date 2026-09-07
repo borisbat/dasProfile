@@ -30,7 +30,7 @@ def clone(var tab : array<int>; from : array<int>) {
     }
 }
 
-[export, no_aot]
+[export, no_aot, no_jit]
 def main {
     var tab : array<int>
     makeRandomSequence(tab)

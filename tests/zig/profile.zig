@@ -15,11 +15,6 @@ fn nowNs(io: Io) f64 {
 
 pub fn profile(init: std.process.Init, category: []const u8, comptime f: anytype, ctx: anytype) !void {
     const io = init.io;
-    // DASPROFILE_STARTUP: the startup table's rows - the kernel runs once, nothing is printed
-    if (init.environ_map.get("DASPROFILE_STARTUP")) |_| {
-        f(ctx);
-        return;
-    }
     var n: i64 = 1;
     var total: f64 = 0;
     while (true) {

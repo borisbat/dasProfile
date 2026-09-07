@@ -104,7 +104,7 @@ def nbodies(n) {
     scale_bodies(1. / 0.01, g_bodies)
 }
 
-[export, no_aot]
+[export, no_aot, no_jit]
 def main {
     offset_momentum(g_bodies)
     energy(g_bodies)

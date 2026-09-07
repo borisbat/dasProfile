@@ -73,7 +73,7 @@ struct ProfileArgs {
     @clarg_doc = "Generate JSON output"
     json : bool
 
-    @clarg_doc = "Print the startup table (hello world and every test: interpreter, JIT, exe, zig) and exit"
+    @clarg_doc = "Print the startup table (hello world in every language on the boards) and exit"
     startup : bool
 
     @clarg_doc = "Log compilation time"
@@ -573,9 +573,9 @@ def private median_of(var values : array<double>) : double {
     return (n & 1) == 1 ? values[n / 2] : (values[n / 2 - 1] + values[n / 2]) * 0.5lf
 }
 
-//! one lane of a startup row: the median wall time of `count` launches of the app with
-//! DASPROFILE_STARTUP=1 (the kernel runs once, nothing is printed), and the artifact's size where the
-//! lane is an executable
+//! one runtime's hello world: the median wall time of `count` launches after a warm one, and the
+//! size of the artifact the lane runs where it built one (a das exe, the C++ and zig exes, a .NET
+//! assembly, a Mono exe); a script lane carries no size
 struct private StartupEntry {
     language : string
     time     : double
@@ -584,26 +584,10 @@ struct private StartupEntry {
     size     : int64
 }
 
-struct private StartupRow {
-    category : string
-    file     : string
-    stem     : string
-}
-
 def private startup_runs {
     let s = get_env_variable("DASPROFILE_STARTUP_RUNS")
     let n = empty(s) ? 0 : to_int(s)
     return n < 1 ? 10 : n
-}
-
-//! the bench category a test file reports, so a startup row is keyed like the main tables' rows
-def private bench_category(file : string) : string {
-    let text = fread(file)
-    let at = find(text, "bench(\"")
-    if (at < 0) return base_name(file)
-    let rest = slice(text, at + length("bench(\""))
-    let close = find(rest, "\"")
-    return close < 0 ? base_name(file) : slice(rest, 0, close)
 }
 
 def private file_size(path : string) : int64 {
@@ -639,14 +623,14 @@ def private startup_entry(language : string; argv : array<string>; count : int; 
     return <- StartupEntry(language = language, time = median, count = length(samples), samples <- samples, size = size)
 }
 
-//! the startup table: hello world and every test, each launched in startup mode under the
-//! interpreter, the JIT (one launch first, so the DLL cache is warm where the platform keeps one), as
-//! a standalone exe built here, and as its zig twin
-def private collect_startup() : table<string; array<StartupEntry>> {
+//! the startup table: hello world in every language on the boards, each launched the way its
+//! lane's kernels are launched, so a row reads as "what a program in this lane pays before its
+//! first line"; the das exe, the .NET assembly and the Mono exe are built into a temp directory
+def private collect_startup() : table<string; array<StartupEntry>> {   // nolint:STYLE037,STYLE038 - one lane after another, the order is the boards' order
     var result : table<string; array<StartupEntry>>
     let exe = get_command_line_arguments()[0]
     let root = profile_root()
-    let zigOut = path_join(root, "tests/zig/.zig-out")
+    let runtimeRoot = profile_runtime_root()
     var terr : string
     let tmp = create_temp_directory("dasprofile_startup", terr)
     if (empty(tmp)) {
@@ -654,52 +638,88 @@ def private collect_startup() : table<string; array<StartupEntry>> {
         failed ++
         return <- result
     }
-    let prevStartup = get_env_variable("DASPROFILE_STARTUP")
-    set_env_variable("DASPROFILE_STARTUP", "1")
     let prevPath = get_env_variable("PATH")
     let sep = get_platform_name() == "windows" ? ";" : ":"
-    set_env_variable("PATH", "{dir_name(exe)}{sep}{prevPath}")   //! the exe links the runtime beside daslang
-    var rows : array<StartupRow>
-    rows |> emplace(StartupRow(category = "hello world", file = path_join(root, "tests/startup/hello.das"), stem = "hello"))
-    dir(tests_dir()) $(fileName) {
-        if ((!fileName |> starts_with("_")) && fileName |> ends_with(".das")) {
-            let file = "{tests_dir()}/{fileName}"
-            rows |> emplace(StartupRow(category = bench_category(file), file = file, stem = slice(fileName, 0, length(fileName) - 4)))
-        }
-    }
+    set_env_variable("PATH", "{dir_name(exe)}{sep}{prevPath}")   //! the das exe links the runtime beside daslang
     let count = startup_runs()
-    for (row in rows) {
-        print("startup: {row.category}\n")
-        var lanes : array<StartupEntry>
-        lanes |> emplace(startup_entry("DAS INTERPRETER", [exe, row.file], count, 0l))
-        var jitArgv <- [exe, "-jit", row.file]
-        if (get_platform_name() == "windows") {
-            jitArgv |> push("-jit-no-cache")   //! daScript#2802: no DLL cache on windows, every JIT launch compiles
-        }
-        lanes |> emplace(startup_entry("DAS JIT", jitArgv, count, 0l))   //! the warm launch inside mints the DLL cache
-        let exeOut = path_join(tmp, row.stem)
-        let exePath = "{exeOut}.exe"   //! daslang -exe appends .exe to -output on every platform
-        if (find(fread(row.file), "require testProfile") >= 0) {
-            //! a program whose das kernel calls the C++ module ships that module in its exe, which links the
-            //! whole compiler library: not the runtime-only exe the other rows measure, so no exe row
-            print("startup: {row.category} calls the C++ module, no runtime-only exe\n")
-        } else {
-            var bout : string
-            let brc = run_and_capture([exe, "-exe", "-output", exeOut, row.file], bout, 600.0)
-            if (brc != 0 || !stat(exePath).is_valid) {
-                print("startup: -exe build of {row.file} failed ({brc})\n{bout}\n")
-                failed ++
-            } else {
-                lanes |> emplace(startup_entry("DAS EXE", [exePath], count, file_size(exePath)))
-            }
-        }
-        let zigExe = native_executable(path_join(zigOut, row.stem))
-        if (stat(zigExe).is_valid) {
-            lanes |> emplace(startup_entry("ZIG", [zigExe], count, file_size(zigExe)))
-        }
-        result[row.category] <- lanes
+    var lanes : array<StartupEntry>
+    let helloDas = path_join(root, "tests/startup/hello.das")
+    lanes |> emplace(startup_entry("DAS INTERPRETER", [exe, helloDas], count, 0l))
+    var jitArgv <- [exe, "-jit", helloDas]
+    if (get_platform_name() == "windows") {
+        jitArgv |> push("-jit-no-cache")   //! daScript#2802: no DLL cache on windows, every JIT launch compiles
     }
-    set_env_variable("DASPROFILE_STARTUP", prevStartup)
+    lanes |> emplace(startup_entry("DAS JIT", jitArgv, count, 0l))   //! the warm launch inside mints the DLL cache
+    let exeOut = path_join(tmp, "hello")
+    let exePath = "{exeOut}.exe"   //! daslang -exe appends .exe to -output on every platform
+    var bout : string
+    let brc = run_and_capture([exe, "-exe", "-output", exeOut, helloDas], bout, 600.0)
+    if (brc != 0 || !stat(exePath).is_valid) {
+        print("startup: -exe build of hello.das failed ({brc})\n{bout}\n")
+        failed ++
+    } else {
+        lanes |> emplace(startup_entry("DAS EXE", [exePath], count, file_size(exePath)))
+    }
+    let cppHello = native_executable("{runtimeRoot}/tests/cpp/hello")
+    if (stat(cppHello).is_valid) {
+        lanes |> emplace(startup_entry("C++", [cppHello], count, file_size(cppHello)))
+    }
+    let zigOut = path_join(root, "tests/zig/.zig-out")
+    let zigHello = native_executable(path_join(zigOut, "hello"))
+    if (!stat(zigHello).is_valid) {
+        var merr : string
+        mkdir_rec(zigOut, merr)
+        var zout : string
+        run_and_capture(["zig", "build-exe", "-O", "ReleaseFast", "-femit-bin={zigHello}", path_join(root, "tests/zig/hello.zig")], zout, 600.0)
+    }
+    if (stat(zigHello).is_valid) {
+        lanes |> emplace(startup_entry("ZIG", [zigHello], count, file_size(zigHello)))
+    }
+    let luau = native_executable("{runtimeRoot}/tests/luau/luau")
+    let helloLuau = path_join(root, "tests/luau/hello.luau")
+    if (stat(luau).is_valid) {
+        lanes |> emplace(startup_entry("LUAU --codegen", [luau, "-O2", "--codegen", helloLuau], count, 0l))
+        lanes |> emplace(startup_entry("LUAU", [luau, "-O2", helloLuau], count, 0l))
+    }
+    let lua = native_executable("{runtimeRoot}/tests/lua/lua")
+    let helloLua = path_join(root, "tests/lua/hello.lua")
+    if (stat(lua).is_valid) {
+        lanes |> emplace(startup_entry("LUA", [lua, helloLua], count, 0l))
+    }
+    let luajit = native_executable("{runtimeRoot}/tests/lua/luajit")
+    if (stat(luajit).is_valid) {
+        lanes |> emplace(startup_entry("LUAJIT -joff", [luajit, "-O3", "-joff", helloLua], count, 0l))
+        lanes |> emplace(startup_entry("LUAJIT", [luajit, "-O3", helloLua], count, 0l))
+    }
+    let sq = native_executable("{runtimeRoot}/tests/squirrel/sq")
+    if (stat(sq).is_valid) {
+        lanes |> emplace(startup_entry("QUIRREL", [sq, path_join(root, "tests/squirrel/hello.nut")], count, 0l))
+    }
+    let qjs = quickjs_executable("{runtimeRoot}/tests/js")
+    if (stat(qjs).is_valid || get_platform_name() == "windows") {
+        lanes |> emplace(startup_entry("QUICKJS", [qjs, path_join(root, "tests/js/hello.js")], count, 0l))
+    }
+    let helloCs = path_join(root, "tests/cs/hello.cs")
+    let monoExe = path_join(tmp, "hello_mono.exe")
+    var mout : string
+    if (run_and_capture(["mcs", "-optimize+", helloCs, "-out:{monoExe}"], mout, 600.0) == 0 && stat(monoExe).is_valid) {
+        lanes |> emplace(startup_entry("MONO --interpreter", ["mono", "--interpreter", monoExe], count, file_size(monoExe)))
+        lanes |> emplace(startup_entry("MONO", ["mono", monoExe], count, file_size(monoExe)))
+    } else {
+        print("startup: mcs build of hello.cs failed\n{mout}\n")
+    }
+    let dotnet = dotnet_executable()
+    let dotnetOut = path_join(tmp, "dotnet-hello")
+    let dotnetDll = path_join(dotnetOut, "bench.dll")
+    var dout : string
+    let drc = run_and_capture([dotnet, "build", path_join(root, "tests/cs/dasprofile_bench.csproj"), "-c", "Release", "-nologo", "-clp:ErrorsOnly",
+        "-p:BenchmarkSource={helloCs}", "-o", dotnetOut], dout, 600.0)
+    if (drc == 0 && stat(dotnetDll).is_valid) {
+        lanes |> emplace(startup_entry(".NET", [dotnet, dotnetDll], count, file_size(dotnetDll)))
+    } else {
+        print("startup: dotnet build of hello.cs failed ({drc})\n{dout}\n")
+    }
+    result["hello world"] <- lanes
     set_env_variable("PATH", prevPath)
     var rerr : string
     rmdir_rec(tmp, rerr)
