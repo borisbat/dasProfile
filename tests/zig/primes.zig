@@ -27,6 +27,6 @@ fn run(_: void) void {
 }
 
 pub fn main(init: std.process.Init) !void {
-    try profile.profile(init.io, "primes loop", run, {});
+    try profile.profile(init, "primes loop", run, {});
     if (result != 1652) profile.fail("primes loop: wrong count");
 }

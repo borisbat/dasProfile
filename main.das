@@ -22,7 +22,13 @@ var PROFILE_MODULES_REGISTERED = false
 
 var failed = 0
 
+//! the source tree the runner was started in, when it holds the suite; the runner's own file
+//! resolves to the binary's directory when it is named by a relative path, which is not the tree
 def profile_root {
+    let local = getcwd()
+    if (fexist("{local}/config.das") && fexist("{local}/main.das") && stat("{local}/tests").is_valid) {
+        return local
+    }
     return get_this_module_dir()
 }
 
@@ -66,6 +72,9 @@ struct ProfileArgs {
 
     @clarg_doc = "Generate JSON output"
     json : bool
+
+    @clarg_doc = "Print the startup table (hello world and every test: interpreter, JIT, exe, zig) and exit"
+    startup : bool
 
     @clarg_doc = "Log compilation time"
     log : bool
@@ -564,6 +573,148 @@ def private median_of(var values : array<double>) : double {
     return (n & 1) == 1 ? values[n / 2] : (values[n / 2 - 1] + values[n / 2]) * 0.5lf
 }
 
+//! one lane of a startup row: the median wall time of `count` launches of the app with
+//! DASPROFILE_STARTUP=1 (the kernel runs once, nothing is printed), and the artifact's size where the
+//! lane is an executable
+struct private StartupEntry {
+    language : string
+    time     : double
+    count    : int
+    samples  : array<double>
+    size     : int64
+}
+
+struct private StartupRow {
+    category : string
+    file     : string
+    stem     : string
+}
+
+def private startup_runs {
+    let s = get_env_variable("DASPROFILE_STARTUP_RUNS")
+    let n = empty(s) ? 0 : to_int(s)
+    return n < 1 ? 10 : n
+}
+
+//! the bench category a test file reports, so a startup row is keyed like the main tables' rows
+def private bench_category(file : string) : string {
+    let text = fread(file)
+    let at = find(text, "bench(\"")
+    if (at < 0) return base_name(file)
+    let rest = slice(text, at + length("bench(\""))
+    let close = find(rest, "\"")
+    return close < 0 ? base_name(file) : slice(rest, 0, close)
+}
+
+def private file_size(path : string) : int64 {
+    let st = stat(path)
+    return st.is_valid ? int64(st.size) : 0l
+}
+
+//! launches argv `count` times and returns the wall time of each, seconds
+def private time_launches(argv : array<string>; count : int) : array<double> {
+    var samples : array<double>
+    samples |> reserve(count)
+    for (i in range(count)) {
+        var out : string
+        let t0 = ref_time_ticks()
+        let rc = run_and_capture(argv, out, 0.0)   //! no timeout: a timed wait polls the child on a 100 ms grain
+        let dt = get_time_nsec(t0)
+        if (rc != 0) {
+            print("startup: {argv} exited with {rc}\n{out}\n")
+            failed ++
+            break
+        }
+        samples |> push(double(dt) / 1000000000.0lf)
+    }
+    return <- samples
+}
+
+def private startup_entry(language : string; argv : array<string>; count : int; size : int64) : StartupEntry {
+    var warm : string
+    run_and_capture(argv, warm, 0.0)   //! one launch before the timed ones: a fresh artifact's first start pays the loader's checks
+    var samples <- time_launches(argv, count)
+    var sorted := samples
+    let median = empty(sorted) ? 0.0lf : median_of(sorted)
+    return <- StartupEntry(language = language, time = median, count = length(samples), samples <- samples, size = size)
+}
+
+//! the startup table: hello world and every test, each launched in startup mode under the
+//! interpreter, the JIT (one launch first, so the DLL cache is warm where the platform keeps one), as
+//! a standalone exe built here, and as its zig twin
+def private collect_startup() : table<string; array<StartupEntry>> {
+    var result : table<string; array<StartupEntry>>
+    let exe = get_command_line_arguments()[0]
+    let root = profile_root()
+    let zigOut = path_join(root, "tests/zig/.zig-out")
+    var terr : string
+    let tmp = create_temp_directory("dasprofile_startup", terr)
+    if (empty(tmp)) {
+        print("startup: create_temp_directory: {terr}\n")
+        failed ++
+        return <- result
+    }
+    let prevStartup = get_env_variable("DASPROFILE_STARTUP")
+    set_env_variable("DASPROFILE_STARTUP", "1")
+    let prevPath = get_env_variable("PATH")
+    let sep = get_platform_name() == "windows" ? ";" : ":"
+    set_env_variable("PATH", "{dir_name(exe)}{sep}{prevPath}")   //! the exe links the runtime beside daslang
+    var rows : array<StartupRow>
+    rows |> emplace(StartupRow(category = "hello world", file = path_join(root, "tests/startup/hello.das"), stem = "hello"))
+    dir(tests_dir()) $(fileName) {
+        if ((!fileName |> starts_with("_")) && fileName |> ends_with(".das")) {
+            let file = "{tests_dir()}/{fileName}"
+            rows |> emplace(StartupRow(category = bench_category(file), file = file, stem = slice(fileName, 0, length(fileName) - 4)))
+        }
+    }
+    let count = startup_runs()
+    for (row in rows) {
+        print("startup: {row.category}\n")
+        var lanes : array<StartupEntry>
+        lanes |> emplace(startup_entry("DAS INTERPRETER", [exe, row.file], count, 0l))
+        var jitArgv <- [exe, "-jit", row.file]
+        if (get_platform_name() == "windows") {
+            jitArgv |> push("-jit-no-cache")   //! daScript#2802: no DLL cache on windows, every JIT launch compiles
+        }
+        lanes |> emplace(startup_entry("DAS JIT", jitArgv, count, 0l))   //! the warm launch inside mints the DLL cache
+        let exeOut = path_join(tmp, row.stem)
+        let exePath = "{exeOut}.exe"   //! daslang -exe appends .exe to -output on every platform
+        if (find(fread(row.file), "require testProfile") >= 0) {
+            //! a program whose das kernel calls the C++ module ships that module in its exe, which links the
+            //! whole compiler library: not the runtime-only exe the other rows measure, so no exe row
+            print("startup: {row.category} calls the C++ module, no runtime-only exe\n")
+        } else {
+            var bout : string
+            let brc = run_and_capture([exe, "-exe", "-output", exeOut, row.file], bout, 600.0)
+            if (brc != 0 || !stat(exePath).is_valid) {
+                print("startup: -exe build of {row.file} failed ({brc})\n{bout}\n")
+                failed ++
+            } else {
+                lanes |> emplace(startup_entry("DAS EXE", [exePath], count, file_size(exePath)))
+            }
+        }
+        let zigExe = native_executable(path_join(zigOut, row.stem))
+        if (stat(zigExe).is_valid) {
+            lanes |> emplace(startup_entry("ZIG", [zigExe], count, file_size(zigExe)))
+        }
+        result[row.category] <- lanes
+    }
+    set_env_variable("DASPROFILE_STARTUP", prevStartup)
+    set_env_variable("PATH", prevPath)
+    var rerr : string
+    rmdir_rec(tmp, rerr)
+    return <- result
+}
+
+def private print_startup(startup : table<string; array<StartupEntry>>) {
+    for (category, lanes in keys(startup), values(startup)) {
+        for (lane in lanes) {
+            let size = lane.size > 0l ? " {lane.size} bytes" : ""
+            print("\"{lane.language}\", \"{category}\", {lane.time:.6f}, {lane.count}{size}\n")
+        }
+    }
+}
+
 struct private Report {
     cpu       : string
     platform  : string  // "darwin" / "linux" / "windows" — drives per-platform sections in README and the daslang.io cycler
@@ -573,6 +724,8 @@ struct private Report {
     interpreted : table<string; array<ResultEntry>>
     @rename = "AOT or JIT"
     aot_or_jit  : table<string; array<ResultEntry>>
+    @rename = "Startup"
+    startup     : table<string; array<StartupEntry>>
 }
 
 def private collect(lang_set : table<string>; entries : array<ProfileEntry>) : table<string; array<ResultEntry>> {
@@ -646,7 +799,8 @@ def make_json_output(cpu_name : string; version_info : VersionInfo) {
         timestamp = "{get_clock()}",
         versions = version_info,
         interpreted <- collect(interpreted_languages, entries),
-        aot_or_jit  <- collect(aot_jit_languages, entries))
+        aot_or_jit  <- collect(aot_jit_languages, entries),
+        startup     <- collect_startup())
 
     // Platform-suffixed so captures from several machines coexist; the README
     // generator (update_readme_benchmarks.py) globs them for per-platform
@@ -692,6 +846,10 @@ def main {
 
     if (args.json) {
         make_json_output(cpuName, versionInfo)
+        return
+    }
+    if (args.startup) {
+        print_startup(collect_startup())
         return
     }
     if (args.log) {

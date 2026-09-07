@@ -4,7 +4,7 @@
 
 Each `profile_results_<platform>.json` becomes a `### <PlatformDisplayName>`
 section with full prelude (CPU, capture path + timestamp, toolchain, runtime
-versions) and the two benchmark tables (Interpreted / AOT or JIT). Sections
+versions), the two benchmark tables (Interpreted / AOT or JIT) and the Startup table. Sections
 are ordered darwin first, then alphabetical by platform key. Platforms missing
 a runtime show `-` in that column; rows with no entries are skipped.
 """
@@ -137,7 +137,11 @@ def build_snapshot(profiles: list[tuple[Path, dict[str, Any]]], readme_path: Pat
              "Per-platform captures. A cell is the median of five samples, each its own process; "
              "a sample runs the kernel as many times as fit a 0.5 s budget and reports the per-run time, "
              "and `±` is half the sample range as a share of the median. Lower is better. "
-             "The fastest result in each row is in bold. `-` means no value for that runtime on that benchmark."]
+             "The fastest result in each row is in bold. `-` means no value for that runtime on that benchmark. "
+             "The Startup table is the wall time of one launch of each program - start, one kernel iteration, "
+             "exit - under the interpreter, the JIT with a warm DLL cache, as a standalone exe, and as its zig "
+             "twin, with the size of each executable: a das exe links the daslang runtime library "
+             "dynamically (one copy on the box, shared by every exe), a zig exe is static."]
 
     for path, data in profiles:
         lines.append("")
@@ -182,6 +186,49 @@ def render_platform_section(path: Path, data: dict[str, Any], readme_path: Path)
         lines.extend(["", f"#### {config.title}", ""])
         lines.extend(render_table(config, section))
 
+    startup = data.get("Startup")
+    if isinstance(startup, dict) and startup:
+        lines.extend(["", "#### Startup", ""])
+        lines.extend(render_startup_table(startup))
+
+    return lines
+
+
+STARTUP_COLUMNS = ("DAS INTERPRETER", "DAS JIT", "DAS EXE", "ZIG")
+STARTUP_HEADERS = ("DAS interpreter", "DAS JIT", "DAS exe", "exe size", "Zig exe", "zig size")
+
+
+def format_size(size: Any) -> str:
+    if not isinstance(size, (int, float)) or size <= 0:
+        return "-"
+    if size >= 1048576:
+        return f"{size / 1048576:.1f} MB"
+    return f"{round(size / 1024)} KB"
+
+
+def render_startup_table(section: dict[str, Any]) -> list[str]:
+    """One row per program: the wall time of one launch under each lane (start, one kernel
+    iteration, exit - the kernel's own cost is in the tables above), and the artifact size
+    where the lane is an executable."""
+    lines = [
+        "| Program | " + " | ".join(STARTUP_HEADERS) + " |",
+        "| --- | " + " | ".join("---:" for _ in STARTUP_HEADERS) + " |",
+    ]
+    for test_name, row in section.items():
+        entries = validate_row("Startup", test_name, row)
+        if not entries:
+            continue
+        sizes = {item["language"]: item.get("size") for item in row if isinstance(item, dict)}
+        best_time = min(entry["time"] for entry in entries.values())
+        cells = [
+            format_cell(entries.get("DAS INTERPRETER"), best_time),
+            format_cell(entries.get("DAS JIT"), best_time),
+            format_cell(entries.get("DAS EXE"), best_time),
+            format_size(sizes.get("DAS EXE")),
+            format_cell(entries.get("ZIG"), best_time),
+            format_size(sizes.get("ZIG")),
+        ]
+        lines.append(f"| {test_name} | " + " | ".join(cells) + " |")
     return lines
 
 

@@ -81,7 +81,7 @@ fn run(_: void) void {
 
 pub fn main(init: std.process.Init) !void {
     @memset(&input, '.');
-    try profile.profile(init.io, "sha256", run, {});
+    try profile.profile(init, "sha256", run, {});
     sha256(&input, &hex);
     if (!std.mem.eql(u8, &hex, "8adcaee60bb05a9964a1df12d2f007adcb8f3fa20ff7d1ecfde0a2ac301ff412")) profile.fail("sha256: wrong digest");
 }

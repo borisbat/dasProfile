@@ -124,5 +124,5 @@ fn run(_: void) void {
 
 pub fn main(init: std.process.Init) !void {
     gpa = init.gpa;
-    try profile.profile(init.io, "tree", run, {});
+    try profile.profile(init, "tree", run, {});
 }

@@ -31,5 +31,5 @@ fn run(_: void) void {
 
 pub fn main(init: std.process.Init) !void {
     for (0..total_numbers) |i| nums[i] = mkFloat(i);
-    try profile.profile(init.io, "float2string", run, {});
+    try profile.profile(init, "float2string", run, {});
 }

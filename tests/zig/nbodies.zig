@@ -67,5 +67,5 @@ fn run(_: void) void {
 
 pub fn main(init: std.process.Init) !void {
     offsetMomentum(&bodies);
-    try profile.profile(init.io, "n-bodies", run, {});
+    try profile.profile(init, "n-bodies", run, {});
 }

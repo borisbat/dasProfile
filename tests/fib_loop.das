@@ -2,7 +2,6 @@ options gen2
 options _comment_hygiene = true
 // options log=true, print_var_access=true, print_ref=true
 
-require testProfile
 require daslib/only_nttp
 
 include ../config.das
@@ -26,14 +25,9 @@ def main {
         f1 = fibI(6511134)
     }
     assert(f1 == 1781508648)
-    if (is_cpp_time()) {
-        cpp_label()
-        var f4 = 0
-        bench("fibonacci loop") <| $() {
-            f4 = testProfile::testFibI(6511134)
-        }
-        assert(f4 == 1781508648)
+    if (is_interp_time()) {
         run_files(TestFile(
+            cppFile = "fib_loop.das",
             luauFile = "fib_loop.luau",
             luaFile = "fib_loop.lua",
             luaJitFile = "fib_loop.lua",

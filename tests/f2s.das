@@ -2,7 +2,6 @@ options gen2
 options _comment_hygiene = true
 // options log=true, print_var_access=true, print_ref=true
 
-require testProfile
 require daslib/only_nttp
 
 include ../config.das
@@ -40,14 +39,9 @@ def main {
         f1 = f2s(nums)
     }
     assert(f1 == summ)
-    if (is_cpp_time()) {
-        cpp_label()
-        var f4 = 0
-        bench("float2string") <| $() {
-            f4 = test_f2s(nums, TOTAL_NUMBERS, TOTAL_TIMES)
-        }
-        //assert(f4==summ)
+    if (is_interp_time()) {
         run_files(TestFile(
+            cppFile = "f2s.das",
             luauFile = "f2s.luau",
             luaFile = "f2s.lua",
             luaJitFile = "f2s.lua",

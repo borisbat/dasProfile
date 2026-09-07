@@ -54,6 +54,6 @@ fn run(_: void) void {
 }
 
 pub fn main(init: std.process.Init) !void {
-    try profile.profile(init.io, "spectral norm", run, {});
+    try profile.profile(init, "spectral norm", run, {});
     if (@abs(result - 1.274224153) >= 1e-5) profile.fail("spectral norm: wrong result");
 }

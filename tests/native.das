@@ -16,20 +16,16 @@ def testAdds() {
     return count
 }
 
-[export, no_aot, no_jit]
+[export, no_aot]
 def main {
     var count = 0
     bench("interop host calls") <| $() {
         count = testAdds()
     }
     assert(1000000 == count)
-    if (is_cpp_time()) {
-        cpp_label()
-        bench("interop host calls") <| $() {
-            count = testNativeLoop()
-        }
-        assert(1000000 == count)
+    if (is_interp_time()) {
         run_files(TestFile(
+            cppFile = "native.das",
             native = true,
             luauFile = "native.luau",
             luaFile = "native.lua",

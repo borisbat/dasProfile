@@ -23,6 +23,6 @@ fn run(_: void) void {
 }
 
 pub fn main(init: std.process.Init) !void {
-    try profile.profile(init.io, "interop host calls", run, {});
+    try profile.profile(init, "interop host calls", run, {});
     if (result != 1_000_000) profile.fail("interop host calls: wrong count");
 }

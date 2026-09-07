@@ -2,7 +2,6 @@ options gen2
 options _comment_hygiene = true
 // options log=true, print_var_access=true, print_ref=true
 
-require testProfile
 require daslib/only_nttp
 
 include ../config.das
@@ -15,21 +14,16 @@ def fibR(n) {
     return fibR(n - 1) + fibR(n - 2)
 }
 
-[export, no_aot, no_jit]
+[export, no_aot]
 def main {
     var f3 = 0
     bench("fibonacci recursive") <| $() {
         f3 = fibR(31)
     }
     assert(f3 == 1346269)
-    if (is_cpp_time()) {
-        cpp_label()
-        var f5 = 0
-        bench("fibonacci recursive") <| $() {
-            f5 = testProfile::testFibR(31)
-        }
-        assert(f5 == 1346269)
+    if (is_interp_time()) {
         run_files(TestFile(
+            cppFile = "fib_recursive.das",
             luauFile = "fib_recursive.luau",
             luaFile = "fib_recursive.lua",
             luaJitFile = "fib_recursive.lua",

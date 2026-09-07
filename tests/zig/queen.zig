@@ -35,6 +35,6 @@ fn run(_: void) void {
 }
 
 pub fn main(init: std.process.Init) !void {
-    try profile.profile(init.io, "queen", run, {});
+    try profile.profile(init, "queen", run, {});
     if (solutions != 92) profile.fail("queen: wrong solution count");
 }

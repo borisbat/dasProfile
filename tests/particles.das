@@ -4,7 +4,6 @@ options _comment_hygiene = true
 // options logCpp = true
 // options log_nodes=true
 
-require testProfile
 
 include ../config.das
 
@@ -37,19 +36,16 @@ def init(var objects : array<NObject>) {
     assert(i == length(objects))
 }
 
-[export, no_aot, no_jit]
+[export, no_aot]
 def main {
     var objects : array<NObject>
     init(objects)
     bench("particles kinematics") <| $() {
         testSim2I(objects, 10)
     }
-    if (is_cpp_time()) {
-        cpp_label()
-        bench("particles kinematics") <| $() {
-            testProfile::testParticlesI(10)
-        }
+    if (is_interp_time()) {
         run_files(TestFile(
+            cppFile = "particles.das",
             luauFile = "particles.luau",
             luaFile = "particles.lua",
             luaJitFile = "particles.lua",

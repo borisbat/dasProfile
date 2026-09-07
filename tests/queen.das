@@ -1,6 +1,5 @@
 options gen2
 options _comment_hygiene = true
-require testProfile
 
 include ../config.das
 
@@ -47,13 +46,9 @@ def main {
     bench("queen") <| $() {
         test()
     }
-    if (is_cpp_time()) {
-        cpp_label()
-        bench("queen") <| $() {
-            let size = testQueens()
-            assert(size == 92)
-        }
+    if (is_interp_time()) {
         run_files(TestFile(
+            cppFile = "queen.das",
             luauFile = "queen.luau",
             luaFile = "queen.lua",
             luaJitFile = "queen.lua",

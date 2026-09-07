@@ -22,6 +22,6 @@ fn run(_: void) void {
 }
 
 pub fn main(init: std.process.Init) !void {
-    try profile.profile(init.io, "fibonacci loop", run, {});
+    try profile.profile(init, "fibonacci loop", run, {});
     if (result != 1781508648) profile.fail("fibonacci loop: wrong result");
 }

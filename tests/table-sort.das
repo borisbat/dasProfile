@@ -3,7 +3,6 @@ options _comment_hygiene = true
 // options log=true, log_nodes=true, print_var_access=true, print_ref=true
 // options logCpp=true
 options persistent_heap
-require testProfile
 require math
 
 include ../config.das
@@ -31,7 +30,7 @@ def clone(var tab : array<int>; from : array<int>) {
     }
 }
 
-[export, no_aot, no_jit]
+[export, no_aot]
 def main {
     var tab : array<int>
     makeRandomSequence(tab)
@@ -39,13 +38,9 @@ def main {
         var inscope tabb := tab
         sort_table(tabb)
     }
-    if (is_cpp_time()) {
-        cpp_label()
-        bench("sort") <| $() {
-            var inscope tabb := tab
-            testTableSort(tabb)
-        }
+    if (is_interp_time()) {
         run_files(TestFile(
+            cppFile = "table-sort.das",
             luaFile = "table-sort.lua",
             luaJitFile = "table-sort.lua",
             luauFile = "table-sort.luau",

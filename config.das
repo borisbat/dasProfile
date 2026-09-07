@@ -13,13 +13,19 @@ let TEST_SQUIRREL = true
 let TEST_CSHARP = true
 let TEST_MONO_INTERPRETER = true
 let TEST_ZIG = true
+let TEST_CPP = true
 let BENCH_RUNS = 10
 let BENCH_BUDGET_SEC = 0.5lf
 
-[no_jit, no_aot]
+[no_aot]
 def bench(name : string; op : block) : float {
     //! dastest's model: one call calibrates, each batch under the budget regrows the count
-    //! from what it measured (1.2x the projection, at most 100x), the batch that meets it is reported
+    //! from what it measured (1.2x the projection, at most 100x), the batch that meets it is reported;
+    //! under DASPROFILE_STARTUP (the startup table's rows) the kernel runs once and nothing is printed
+    if (!empty(get_env_variable("DASPROFILE_STARTUP"))) {
+        op()
+        return 0.0
+    }
     let budget_ns = int64(BENCH_BUDGET_SEC * 1000000000.0lf)
     var reps = 1l
     var total_ns = 0l
@@ -43,12 +49,12 @@ def bench(name : string; op : block) : float {
     return float(per_op)
 }
 
-[init, no_jit, no_aot]
+[init, no_aot]
 def pin_benchmark_thread {
     set_current_thread_affinity(get_current_processor(), true)
 }
 
-[no_jit, no_aot]
+[no_aot]
 def native_executable(path_no_ext : string) {
     return get_platform_name() == "windows" ? "{path_no_ext}.exe" : path_no_ext
 }
@@ -56,17 +62,17 @@ def native_executable(path_no_ext : string) {
 // Normalize forward slashes to backslashes on Windows: popen runs the command
 // through cmd.exe, which parses `D:/foo/bar.exe` as a drive change plus a switch
 // and fails with "filename, directory name, or volume label syntax is incorrect".
-[no_jit, no_aot]
+[no_aot]
 def to_native_path(p : string) {
     return get_platform_name() == "windows" ? (p |> replace("/", "\\")) : p
 }
 
-[no_jit, no_aot]
+[no_aot]
 def shell_quote(path : string) {
     return "\"{to_native_path(path)}\""
 }
 
-[no_jit, no_aot]
+[no_aot]
 def quickjs_executable(js_root : string) {
     // Windows stages qjs.exe into <runtime_root>/tests/js/ (CMakeLists.txt,
     // stageProfileQuickJs, when MinGW gcc + MSYS2 make are available); fall back
@@ -78,20 +84,20 @@ def quickjs_executable(js_root : string) {
     return native_executable("{js_root}/qjs")
 }
 
-[no_jit, no_aot]
+[no_aot]
 def dotnet_executable() : string {
     let dotnetPath = "/usr/local/share/dotnet/dotnet"
     return get_platform_name() == "windows" ? "dotnet" : (stat(dotnetPath).is_valid ? dotnetPath : "dotnet")
 }
 
-[no_jit, no_aot]
+[no_aot]
 def csharp_shared_library_name(base_name : string) {
     if (get_platform_name() == "windows") return "{base_name}.dll"
     if (get_platform_name() == "macos" || get_platform_name() == "darwin") return "lib{base_name}.dylib"
     return "lib{base_name}.so"
 }
 
-[no_jit, no_aot]
+[no_aot]
 def zig_executable() : string {
     return get_platform_name() == "windows" ? "zig.exe" : "zig"
 }
@@ -99,7 +105,7 @@ def zig_executable() : string {
 //! the zig lane builds each test once into tests/zig/.zig-out and rebuilds only when the test or
 //! the shared harness is newer than the artifact; `interop host calls` compiles addOne.c beside
 //! it as its own object with LTO off, so every AddOne is a call across the C ABI
-[no_jit, no_aot]
+[no_aot]
 def zig_needs_build(exe : string; sources : array<string>) : bool {
     let exeStat = stat(exe)
     if (!exeStat.is_valid) return true
@@ -110,17 +116,13 @@ def zig_needs_build(exe : string; sources : array<string>) : bool {
     return false
 }
 
-[no_jit, no_aot]
-def cpp_label {
-    print("\"C++\", ")
-}
-
-[no_jit, no_aot]
-def is_cpp_time {
+//! the interpreted run of a test is the one that spawns every other lane
+[no_aot]
+def is_interp_time {
     return !jit_enabled() && !aot_enabled()
 }
 
-[no_jit, no_aot]
+[no_aot]
 def profile_source_root() : string {
     let local = getcwd()
     if (fexist("{local}/config.das") && fexist("{local}/main.das") && stat("{local}/tests").is_valid) {
@@ -129,7 +131,7 @@ def profile_source_root() : string {
     return "{get_das_root()}/examples/profile"
 }
 
-[no_jit, no_aot]
+[no_aot]
 def profile_runtime_root() : string {
     let local = profile_source_root()
     let local_lua = native_executable("{local}/tests/lua/lua")
@@ -140,6 +142,7 @@ def profile_runtime_root() : string {
 }
 
 struct TestFile {
+    cppFile : string //! tests/cpp/<name>.das - the one program that requires testProfile, the C++ kernels
     luaFile : string // lua
     luaJitFile : string // lua jit
     luauFile : string // luau
@@ -158,12 +161,12 @@ let ENCODING = string([ 0xefu8, 0xbbu8, 0xbfu8])
 // Windows popen ⇒ cmd /c. cmd strips the first and last quote whenever a command
 // both starts and ends with `"`, which leaves our quoted-exe + quoted-script
 // commands unbalanced mid-string; wrap once more so that strip is harmless.
-[no_jit, no_aot]
+[no_aot]
 def cmd_safe(s : string) {
     return get_platform_name() == "windows" ? "\"{s}\"" : s
 }
 
-[no_jit, no_aot]
+[no_aot]
 def run_and_gun(lang, cmdLine : string) {
     unsafe {
         print("\"{lang}\", ")
@@ -186,7 +189,7 @@ def run_and_gun(lang, cmdLine : string) {
     }
 }
 
-[no_jit, no_aot]
+[no_aot]
 def run_and_gun_silent(cmdLine : string) {
     unsafe {
         var problem = ""
@@ -203,11 +206,19 @@ def run_and_gun_silent(cmdLine : string) {
     }
 }
 
-[no_jit, no_aot]
+[no_aot]
 def run_files(tf : TestFile) {
-    if (!empty(get_env_variable("DASPROFILE_DAS_ONLY"))) return
+    if (!empty(get_env_variable("DASPROFILE_STARTUP"))) return   //! a startup row is the app alone
     let sourceRoot = profile_source_root()
     let runtimeRoot = profile_runtime_root()
+    if (TEST_CPP && !empty(tf.cppFile)) {
+        //! the C++ kernels run from tests/cpp/<name>.das in a child of the same daslang, interpreted
+        //! like every other lane's host; the child finds testProfile through the SDK's module scan
+        let dasExe = get_command_line_arguments()[0]
+        let cppScript = "{sourceRoot}/tests/cpp/{tf.cppFile}"
+        run_and_gun("C++", "{shell_quote(dasExe)} {shell_quote(cppScript)}")
+    }
+    if (!empty(get_env_variable("DASPROFILE_DAS_ONLY"))) return
 
     if (TEST_LUAU && !empty(tf.luauFile)) {
         let luauSourceRoot = "{sourceRoot}/tests/luau"

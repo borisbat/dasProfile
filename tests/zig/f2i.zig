@@ -36,6 +36,6 @@ pub fn main(init: std.process.Init) !void {
     for (0..total_times) |_| {
         for (0..total_numbers) |i| reference += mkFloat(i);
     }
-    try profile.profile(init.io, "string2float", run, {});
+    try profile.profile(init, "string2float", run, {});
     if (result != reference) profile.fail("string2float: sum differs from the reference");
 }

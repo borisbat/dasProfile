@@ -33,7 +33,7 @@ fn run(_: void) void {
 
 pub fn main(init: std.process.Init) !void {
     for (0..n) |i| src[i] = @bitCast(uintNoise1D(@intCast(i), 1));
-    try profile.profile(init.io, "sort", run, {});
+    try profile.profile(init, "sort", run, {});
     for (1..n) |i| {
         if (work[i - 1] < work[i]) profile.fail("sort: not descending");
     }

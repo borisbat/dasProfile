@@ -15,6 +15,6 @@ fn run(_: void) void {
 }
 
 pub fn main(init: std.process.Init) !void {
-    try profile.profile(init.io, "fibonacci recursive", run, {});
+    try profile.profile(init, "fibonacci recursive", run, {});
     if (result != 1346269) profile.fail("fibonacci recursive: wrong result");
 }

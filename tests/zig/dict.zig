@@ -34,5 +34,5 @@ fn run(_: void) void {
 pub fn main(init: std.process.Init) !void {
     gpa = init.gpa;
     try makeRandomSequence();
-    try profile.profile(init.io, "dictionary", run, {});
+    try profile.profile(init, "dictionary", run, {});
 }

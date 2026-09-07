@@ -47,5 +47,5 @@ fn run(_: void) void {
 }
 
 pub fn main(init: std.process.Init) !void {
-    try profile.profile(init.io, "mandelbrot", run, {});
+    try profile.profile(init, "mandelbrot", run, {});
 }

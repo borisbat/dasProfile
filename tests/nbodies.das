@@ -4,7 +4,6 @@ options solid_context
 // options log_nodes=true
 // options logCpp=true
 require math
-require testProfile
 require daslib/unroll
 //ported from https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-gcc-2.html
 
@@ -105,7 +104,7 @@ def nbodies(n) {
     scale_bodies(1. / 0.01, g_bodies)
 }
 
-[export, no_aot, no_jit]
+[export, no_aot]
 def main {
     offset_momentum(g_bodies)
     energy(g_bodies)
@@ -113,13 +112,9 @@ def main {
         nbodies(33000)
     }
     energy(g_bodies)
-    if (is_cpp_time()) {
-        cpp_label()
-        testNBodiesInit()
-        bench("n-bodies") <| $() {
-            testNBodiesS(33000)
-        }
+    if (is_interp_time()) {
         run_files(TestFile(
+            cppFile = "nbodies.das",
             luauFile = "nbodies.luau",
             luaFile = "nbodies.lua",
             luaJitFile = "nbodies.lua",

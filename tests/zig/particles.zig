@@ -32,5 +32,5 @@ pub fn main(init: std.process.Init) !void {
         obj.position = .{ f, f + 1.0, f + 2.0, 0.0 };
         obj.velocity = .{ 1.0, 2.0, 3.0, 0.0 };
     }
-    try profile.profile(init.io, "particles kinematics", run, {});
+    try profile.profile(init, "particles kinematics", run, {});
 }

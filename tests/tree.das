@@ -14,7 +14,6 @@ options persistent_heap = true
 options solid_context
 
 require daslib/random
-require testProfile
 
 struct Node {
     x, y : int
@@ -116,17 +115,14 @@ def mainTreeNode {
     return res
 }
 
-[export, no_aot, no_jit]
+[export, no_aot]
 def main {
     bench("tree") <| $() {
         mainTreeNode()
     }
-    if (is_cpp_time()) {
-        cpp_label()
-        bench("tree") <| $() {
-            testProfile::testTree()
-        }
+    if (is_interp_time()) {
         run_files(TestFile(
+            cppFile = "tree.das",
             luauFile = "tree.luau",
             luaFile = "tree.lua",
             luaJitFile = "tree.lua",

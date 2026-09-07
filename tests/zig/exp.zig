@@ -19,7 +19,7 @@ fn run(_: void) void {
 }
 
 pub fn main(init: std.process.Init) !void {
-    try profile.profile(init.io, "exp loop", run, {});
+    try profile.profile(init, "exp loop", run, {});
     // f32 accumulation: past 2^20 every term rounds to 1.0, so the sum lands within a few ulps of 1e6
     if (@abs(result - 1.0e6) >= 16.0) profile.fail("exp loop: sum is off");
 }
