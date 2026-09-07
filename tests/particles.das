@@ -58,6 +58,7 @@ def main {
             asFile = "particles.as",
             jsFile = "particles.js",
             monoFile = "particles.cs",
-            dotNetFile = "particles.cs"))
+            dotNetFile = "particles.cs",
+            zigFile = "particles.zig"))
     }
 }

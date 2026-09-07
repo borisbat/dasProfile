@@ -56,7 +56,8 @@ def main {
             // asFile = "f2i.as",
             jsFile = "f2i.js",
             monoFile = "f2i.cs", // this one - interpreter goes bonkers
-            dotNetFile = "f2i.cs"))
+            dotNetFile = "f2i.cs",
+            zigFile = "f2i.zig"))
     }
 }
 

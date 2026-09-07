@@ -61,7 +61,8 @@ def main {
             nutModifiedFile = "mandelbrot.nut",
             jsFile = "mandelbrot.js",
             monoFile = "mandelbrot.cs",
-            dotNetFile = "mandelbrot.cs"))
+            dotNetFile = "mandelbrot.cs",
+            zigFile = "mandelbrot.zig"))
     }
 }
 

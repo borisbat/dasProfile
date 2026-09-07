@@ -61,7 +61,8 @@ def main {
             nutModifiedFile = "queen.nut",
             jsFile = "queen.js",
             monoFile = "queen.cs",
-            dotNetFile = "queen.cs"))
+            dotNetFile = "queen.cs",
+            zigFile = "queen.zig"))
     }
 }
 

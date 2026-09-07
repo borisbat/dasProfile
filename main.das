@@ -427,6 +427,7 @@ struct private VersionInfo {
     dotnet       : string
     quickjs      : string
     quirrel      : string
+    zig          : string
 }
 
 def get_version_info {
@@ -456,7 +457,8 @@ def get_version_info {
         mono = probe_tool_version(["mono", "--version"]),
         dotnet = probe_tool_version([dotnet_executable(), "--version"]),
         quickjs = quickjs_version,
-        quirrel = probe_tool_version([native_executable("{squirrel_root}/sq"), "-v"]))
+        quirrel = probe_tool_version([native_executable("{squirrel_root}/sq"), "-v"]),
+        zig = probe_tool_version(["zig", "version"]))
 }
 
 struct ProfileEntry {
@@ -611,6 +613,7 @@ def print_environment_summary(cpu_name : string; version_info : VersionInfo) {
     print("  .NET: {version_info.dotnet}\n") if (!empty(version_info.dotnet))
     print("  QuickJS: {version_info.quickjs}\n") if (!empty(version_info.quickjs))
     print("  Quirrel: {version_info.quirrel}\n") if (!empty(version_info.quirrel))
+    print("  Zig: {version_info.zig}\n") if (!empty(version_info.zig))
     print("\n")
 }
 
@@ -634,7 +637,8 @@ def make_json_output(cpu_name : string; version_info : VersionInfo) {
         "MONO",
         ".NET",
         "LUAJIT",
-        "LUAU --codegen"}
+        "LUAU --codegen",
+        "ZIG"}
 
     let report = Report(
         cpu = cpu_name,

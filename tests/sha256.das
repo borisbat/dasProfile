@@ -135,6 +135,7 @@ def main {
             nutModifiedFile = "sha256.nut",
             jsFile = "sha256.js",
             monoFile = "sha256.cs",
-            dotNetFile = "sha256.cs"))
+            dotNetFile = "sha256.cs",
+            zigFile = "sha256.zig"))
     }
 }

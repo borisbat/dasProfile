@@ -135,7 +135,8 @@ def main {
             // asFile = "tree.as",
             jsFile = "tree.js",
             monoFile = "tree.cs",
-            dotNetFile = "tree.cs"))
+            dotNetFile = "tree.cs",
+            zigFile = "tree.zig"))
     }
 }
 

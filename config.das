@@ -12,6 +12,7 @@ let TEST_LUA_JIT = true
 let TEST_SQUIRREL = true
 let TEST_CSHARP = true
 let TEST_MONO_INTERPRETER = true
+let TEST_ZIG = true
 let BENCH_RUNS = 10
 let BENCH_BUDGET_SEC = 0.5lf
 
@@ -91,6 +92,25 @@ def csharp_shared_library_name(base_name : string) {
 }
 
 [no_jit, no_aot]
+def zig_executable() : string {
+    return get_platform_name() == "windows" ? "zig.exe" : "zig"
+}
+
+//! the zig lane builds each test once into tests/zig/.zig-out and rebuilds only when the test or
+//! the shared harness is newer than the artifact; `interop host calls` compiles addOne.c beside
+//! it as its own object with LTO off, so every AddOne is a call across the C ABI
+[no_jit, no_aot]
+def zig_needs_build(exe : string; sources : array<string>) : bool {
+    let exeStat = stat(exe)
+    if (!exeStat.is_valid) return true
+    for (src in sources) {
+        let srcStat = stat(src)
+        if (!srcStat.is_valid || srcStat.mtime > exeStat.mtime) return true
+    }
+    return false
+}
+
+[no_jit, no_aot]
 def cpp_label {
     print("\"C++\", ")
 }
@@ -129,6 +149,7 @@ struct TestFile {
     jsFile  : string // javascript
     monoFile  : string // csharp mono
     dotNetFile  : string // csharp .net
+    zigFile : string // zig
     native : bool //! the row calls AddOne: luau and quirrel run through the profile hosts
 }
 
@@ -269,6 +290,26 @@ def run_files(tf : TestFile) {
             run_and_gun("MONO", "{monoRunner} test.exe")
         }
         chdir(cwd)
+    }
+    if (TEST_ZIG && !empty(tf.zigFile)) {
+        let zigSourceRoot = "{sourceRoot}/tests/zig"
+        let zigOutput = "{zigSourceRoot}/.zig-out"
+        let zigSource = "{zigSourceRoot}/{tf.zigFile}"
+        let zigHarness = "{zigSourceRoot}/profile.zig"
+        let zigExe = native_executable("{zigOutput}/{tf.zigFile |> slice(0, length(tf.zigFile) - length(".zig"))}")
+        var sources <- [zigSource, zigHarness]
+        var extra = ""
+        if (tf.native) {
+            let addOne = "{sourceRoot}/tests/cs/addOne/addOne.c"
+            sources |> push(addOne)
+            extra = " -fno-lto -lc {shell_quote(addOne)}"
+        }
+        if (zig_needs_build(zigExe, sources)) {
+            var merr : string
+            mkdir_rec(zigOutput, merr)
+            run_and_gun_silent("{zig_executable()} build-exe -O ReleaseFast -femit-bin={shell_quote(zigExe)} {shell_quote(zigSource)}{extra}")
+        }
+        run_and_gun("ZIG", shell_quote(zigExe))
     }
     if (TEST_CSHARP && !empty(tf.dotNetFile)) {
         let cscSourceRoot = "{sourceRoot}/tests/cs"

@@ -88,6 +88,7 @@ def main {
             nutFile = "spectral-norm.nut",
             nutModifiedFile = "spectral-norm.nut",
             dotNetFile = "spectral-norm.cs",
+            zigFile = "spectral-norm.zig",
             jsFile = "spectral-norm.js"))
     }
 }

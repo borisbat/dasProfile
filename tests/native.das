@@ -38,6 +38,7 @@ def main {
             nutModifiedFile = "native.nut",
             jsFile = "native.js",
             monoFile = "native.cs",
-            dotNetFile = "native.cs"))
+            dotNetFile = "native.cs",
+            zigFile = "native.zig"))
     }
 }

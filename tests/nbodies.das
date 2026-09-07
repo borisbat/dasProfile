@@ -128,7 +128,8 @@ def main {
             asFile = "nbodies.as",
             jsFile = "nbodies.js",
             monoFile = "nbodies.cs",
-            dotNetFile = "nbodies.cs"
+            dotNetFile = "nbodies.cs",
+            zigFile = "nbodies.zig"
         ))
     }
 }

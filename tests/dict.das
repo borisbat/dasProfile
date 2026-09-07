@@ -51,6 +51,7 @@ def main {
             // asFile = "dict.as",  // TODO: update AS to new version?
             jsFile = "dict.js",
             monoFile = "dict.cs",
-            dotNetFile = "dict.cs"))
+            dotNetFile = "dict.cs",
+            zigFile = "dict.zig"))
     }
 }

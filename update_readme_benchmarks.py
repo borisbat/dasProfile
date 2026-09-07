@@ -61,6 +61,7 @@ SECTION_CONFIGS: tuple[SectionConfig, ...] = (
             "DAS AOT",
             "DAS JIT",
             "C++",
+            "ZIG",
             "LUAU --codegen",
             "LUAJIT",
             "MONO",
@@ -70,6 +71,7 @@ SECTION_CONFIGS: tuple[SectionConfig, ...] = (
             "DAS AOT",
             "DAS JIT",
             "C++",
+            "Zig",
             "Luau --codegen",
             "LuaJIT",
             "Mono",
@@ -170,7 +172,8 @@ def render_platform_section(path: Path, data: dict[str, Any], readme_path: Path)
             f"{format_runtime_version('mono', optional_string(versions, 'mono'))}, "
             f"{format_runtime_version('dotnet', optional_string(versions, 'dotnet'))}, "
             f"{format_runtime_version('quickjs', optional_string(versions, 'quickjs'))}, "
-            f"{format_runtime_version('quirrel', optional_string(versions, 'quirrel'))}"
+            f"{format_runtime_version('quirrel', optional_string(versions, 'quirrel'))}, "
+            f"{format_runtime_version('zig', optional_string(versions, 'zig'))}"
         ),
     ]
 
@@ -286,7 +289,8 @@ def format_runtime_version(name: str, text: str) -> str:
         # Missing runtime renders as "<Display> -" so the reader can see we
         # tried to detect it (vs. it being plain omitted).
         labels = {"lua": "Lua", "luajit": "LuaJIT", "luau": "Luau",
-                  "mono": "Mono", "dotnet": ".NET", "quickjs": "QuickJS", "quirrel": "Quirrel"}
+                  "mono": "Mono", "dotnet": ".NET", "quickjs": "QuickJS", "quirrel": "Quirrel",
+                  "zig": "Zig"}
         return f"{labels.get(name, name)} -"
     line = short_version(text)
     if name == "lua":

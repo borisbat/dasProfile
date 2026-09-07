@@ -52,6 +52,7 @@ def main {
             asFile = "primes.as",
             jsFile = "primes.js",
             monoFile = "primes.cs",
-            dotNetFile = "primes.cs"))
+            dotNetFile = "primes.cs",
+            zigFile = "primes.zig"))
     }
 }

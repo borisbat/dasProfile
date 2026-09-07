@@ -47,6 +47,7 @@ def main {
             // asFile = "exp.as", // TODO: implement
             jsFile = "exp.js",
             monoFile = "exp.cs",
-            dotNetFile = "exp.cs"))
+            dotNetFile = "exp.cs",
+            zigFile = "exp.zig"))
     }
 }

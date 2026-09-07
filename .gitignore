@@ -52,3 +52,7 @@ tests/cs/obj/
 
 # JIT DLL cache left behind by `daslang -jit main.das`.
 .jitted_scripts/
+
+# zig lane build outputs (tests/zig, config.das builds them on demand).
+tests/zig/.zig-out/
+tests/zig/.zig-cache/

@@ -42,6 +42,7 @@ def main {
             asFile = "fib_loop.as",
             jsFile = "fib_loop.js",
             monoFile = "fib_loop.cs",
-            dotNetFile = "fib_loop.cs"))
+            dotNetFile = "fib_loop.cs",
+            zigFile = "fib_loop.zig"))
     }
 }

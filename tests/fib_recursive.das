@@ -38,7 +38,8 @@ def main {
             asFile = "fib_recursive.as",
             jsFile = "fib_recursive.js",
             monoFile = "fib_recursive.cs",
-            dotNetFile = "fib_recursive.cs"))
+            dotNetFile = "fib_recursive.cs",
+            zigFile = "fib_recursive.zig"))
     }
 }
 

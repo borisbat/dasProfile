@@ -52,6 +52,7 @@ def main {
             jsFile = "table-sort.js",
             monoFile = "table-sort.cs",
             dotNetFile = "table-sort.cs",
+            zigFile = "table-sort.zig",
             nutFile = "table-sort.nut",
             nutModifiedFile = "table-sort.nut"
         ))
