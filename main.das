@@ -713,7 +713,7 @@ def private collect_startup() : table<string; array<StartupEntry>> {   // nolint
     let dotnetDll = path_join(dotnetOut, "bench.dll")
     var dout : string
     let drc = run_and_capture([dotnet, "build", path_join(root, "tests/cs/dasprofile_bench.csproj"), "-c", "Release", "-nologo", "-clp:ErrorsOnly",
-        "-p:BenchmarkSource={helloCs}", "-o", dotnetOut], dout, 600.0)
+        "-p:UseSharedCompilation=false", "-p:BenchmarkSource={helloCs}", "-o", dotnetOut], dout, 600.0)
     if (drc == 0 && stat(dotnetDll).is_valid) {
         lanes |> emplace(startup_entry(".NET", [dotnet, dotnetDll], count, file_size(dotnetDll)))
     } else {

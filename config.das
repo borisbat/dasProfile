@@ -328,7 +328,9 @@ def run_files(tf : TestFile) {
         let dotnetAssembly = "{dotnetOutput}/bench.dll"
         let cwd = getcwd()
         chdir(cscSourceRoot)
-        run_and_gun_silent("{shell_quote(dotnetRunner)} build {shell_quote(dotnetProject)} -c Release -nologo -clp:ErrorsOnly -p:BenchmarkSource={shell_quote(dotnetSource)} -p:NativeLibrary={shell_quote(dotnetLibrary)} -o {shell_quote(dotnetOutput)}")
+        //! UseSharedCompilation=false: a build must not leave the Roslyn compiler server resident, working in the
+        //! background while the lanes that follow are measured
+        run_and_gun_silent("{shell_quote(dotnetRunner)} build {shell_quote(dotnetProject)} -c Release -nologo -clp:ErrorsOnly -p:UseSharedCompilation=false -p:BenchmarkSource={shell_quote(dotnetSource)} -p:NativeLibrary={shell_quote(dotnetLibrary)} -o {shell_quote(dotnetOutput)}")
         set_env_variable("DOTNET_TC_CallCountingDelayMs", "0")
         run_and_gun(".NET", "{dotnetLibraryEnv}{shell_quote(dotnetRunner)} {shell_quote(dotnetAssembly)}")
         chdir(cwd)
