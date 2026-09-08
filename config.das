@@ -12,6 +12,8 @@ let TEST_LUA_JIT = true
 let TEST_SQUIRREL = true
 let TEST_CSHARP = true
 let TEST_MONO_INTERPRETER = true
+let TEST_ZIG = true
+let TEST_CPP = true
 let BENCH_RUNS = 10
 let BENCH_BUDGET_SEC = 0.5lf
 
@@ -91,12 +93,27 @@ def csharp_shared_library_name(base_name : string) {
 }
 
 [no_jit, no_aot]
-def cpp_label {
-    print("\"C++\", ")
+def zig_executable() : string {
+    return get_platform_name() == "windows" ? "zig.exe" : "zig"
 }
 
+//! the zig lane builds each test once into tests/zig/.zig-out and rebuilds only when the test or
+//! the shared harness is newer than the artifact; `interop host calls` compiles addOne.c beside
+//! it as its own object with LTO off, so every AddOne is a call across the C ABI
 [no_jit, no_aot]
-def is_cpp_time {
+def zig_needs_build(exe : string; sources : array<string>) : bool {
+    let exeStat = stat(exe)
+    if (!exeStat.is_valid) return true
+    for (src in sources) {
+        let srcStat = stat(src)
+        if (!srcStat.is_valid || srcStat.mtime > exeStat.mtime) return true
+    }
+    return false
+}
+
+//! the interpreted run of a test is the one that spawns every other lane
+[no_jit, no_aot]
+def is_interp_time {
     return !jit_enabled() && !aot_enabled()
 }
 
@@ -120,6 +137,7 @@ def profile_runtime_root() : string {
 }
 
 struct TestFile {
+    cppFile : string //! tests/cpp/<name>.cpp - the C++ program the CMake builds and stages beside the other lanes' hosts
     luaFile : string // lua
     luaJitFile : string // lua jit
     luauFile : string // luau
@@ -129,6 +147,7 @@ struct TestFile {
     jsFile  : string // javascript
     monoFile  : string // csharp mono
     dotNetFile  : string // csharp .net
+    zigFile : string // zig
     native : bool //! the row calls AddOne: luau and quirrel run through the profile hosts
 }
 
@@ -184,9 +203,13 @@ def run_and_gun_silent(cmdLine : string) {
 
 [no_jit, no_aot]
 def run_files(tf : TestFile) {
-    if (!empty(get_env_variable("DASPROFILE_DAS_ONLY"))) return
     let sourceRoot = profile_source_root()
     let runtimeRoot = profile_runtime_root()
+    if (TEST_CPP && !empty(tf.cppFile)) {
+        let stem = tf.cppFile |> slice(0, length(tf.cppFile) - length(".cpp"))
+        run_and_gun("C++", shell_quote(native_executable("{runtimeRoot}/tests/cpp/{stem}")))
+    }
+    if (!empty(get_env_variable("DASPROFILE_DAS_ONLY"))) return
 
     if (TEST_LUAU && !empty(tf.luauFile)) {
         let luauSourceRoot = "{sourceRoot}/tests/luau"
@@ -270,6 +293,26 @@ def run_files(tf : TestFile) {
         }
         chdir(cwd)
     }
+    if (TEST_ZIG && !empty(tf.zigFile)) {
+        let zigSourceRoot = "{sourceRoot}/tests/zig"
+        let zigOutput = "{zigSourceRoot}/.zig-out"
+        let zigSource = "{zigSourceRoot}/{tf.zigFile}"
+        let zigHarness = "{zigSourceRoot}/profile.zig"
+        let zigExe = native_executable("{zigOutput}/{tf.zigFile |> slice(0, length(tf.zigFile) - length(".zig"))}")
+        var sources <- [zigSource, zigHarness]
+        var extra = ""
+        if (tf.native) {
+            let addOne = "{sourceRoot}/tests/cs/addOne/addOne.c"
+            sources |> push(addOne)
+            extra = " -fno-lto -lc {shell_quote(addOne)}"
+        }
+        if (zig_needs_build(zigExe, sources)) {
+            var merr : string
+            mkdir_rec(zigOutput, merr)
+            run_and_gun_silent("{zig_executable()} build-exe -O ReleaseFast -femit-bin={shell_quote(zigExe)} {shell_quote(zigSource)}{extra}")
+        }
+        run_and_gun("ZIG", shell_quote(zigExe))
+    }
     if (TEST_CSHARP && !empty(tf.dotNetFile)) {
         let cscSourceRoot = "{sourceRoot}/tests/cs"
         let cscRuntimeRoot = "{runtimeRoot}/tests/cs"
@@ -285,7 +328,9 @@ def run_files(tf : TestFile) {
         let dotnetAssembly = "{dotnetOutput}/bench.dll"
         let cwd = getcwd()
         chdir(cscSourceRoot)
-        run_and_gun_silent("{shell_quote(dotnetRunner)} build {shell_quote(dotnetProject)} -c Release -nologo -clp:ErrorsOnly -p:BenchmarkSource={shell_quote(dotnetSource)} -p:NativeLibrary={shell_quote(dotnetLibrary)} -o {shell_quote(dotnetOutput)}")
+        //! UseSharedCompilation=false: a build must not leave the Roslyn compiler server resident, working in the
+        //! background while the lanes that follow are measured
+        run_and_gun_silent("{shell_quote(dotnetRunner)} build {shell_quote(dotnetProject)} -c Release -nologo -clp:ErrorsOnly -p:UseSharedCompilation=false -p:BenchmarkSource={shell_quote(dotnetSource)} -p:NativeLibrary={shell_quote(dotnetLibrary)} -o {shell_quote(dotnetOutput)}")
         set_env_variable("DOTNET_TC_CallCountingDelayMs", "0")
         run_and_gun(".NET", "{dotnetLibraryEnv}{shell_quote(dotnetRunner)} {shell_quote(dotnetAssembly)}")
         chdir(cwd)

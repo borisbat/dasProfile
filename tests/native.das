@@ -23,13 +23,9 @@ def main {
         count = testAdds()
     }
     assert(1000000 == count)
-    if (is_cpp_time()) {
-        cpp_label()
-        bench("interop host calls") <| $() {
-            count = testNativeLoop()
-        }
-        assert(1000000 == count)
+    if (is_interp_time()) {
         run_files(TestFile(
+            cppFile = "native.cpp",
             native = true,
             luauFile = "native.luau",
             luaFile = "native.lua",
@@ -38,6 +34,7 @@ def main {
             nutModifiedFile = "native.nut",
             jsFile = "native.js",
             monoFile = "native.cs",
-            dotNetFile = "native.cs"))
+            dotNetFile = "native.cs",
+            zigFile = "native.zig"))
     }
 }

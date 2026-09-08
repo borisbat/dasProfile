@@ -2,7 +2,6 @@ options gen2
 options _comment_hygiene = true
 // options log=true, print_var_access=true, print_ref=true
 
-require testProfile
 require daslib/only_nttp
 
 require math
@@ -48,12 +47,9 @@ def main {
     bench("mandelbrot") <| $() {
         S = test()
     }
-    if (is_cpp_time()) {
-        cpp_label()
-        bench("mandelbrot") <| $() {
-            S += testMandelbrot()
-        }
+    if (is_interp_time()) {
         run_files(TestFile(
+            cppFile = "mandelbrot.cpp",
             luauFile = "mandelbrot.luau",
             luaFile = "mandelbrot.lua",
             luaJitFile = "mandelbrot.lua",
@@ -61,7 +57,8 @@ def main {
             nutModifiedFile = "mandelbrot.nut",
             jsFile = "mandelbrot.js",
             monoFile = "mandelbrot.cs",
-            dotNetFile = "mandelbrot.cs"))
+            dotNetFile = "mandelbrot.cs",
+            zigFile = "mandelbrot.zig"))
     }
 }
 

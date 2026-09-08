@@ -2,7 +2,6 @@ options gen2
 options _comment_hygiene = true
 // options log=true, print_var_access=true, print_ref=true
 
-require testProfile
 require daslib/only_nttp
 
 include ../config.das
@@ -36,14 +35,9 @@ def main {
         f1 = primes(14000)
     }
     assert(f1 == 1652)
-    if (is_cpp_time()) {
-        cpp_label()
-        var f3 = 0
-        bench("primes loop") <| $() {
-            f3 = testProfile::testPrimes(14000)
-        }
-        assert(f3 == 1652)
+    if (is_interp_time()) {
         run_files(TestFile(
+            cppFile = "primes.cpp",
             luauFile = "primes.luau",
             luaFile = "primes.lua",
             luaJitFile = "primes.lua",
@@ -52,6 +46,7 @@ def main {
             asFile = "primes.as",
             jsFile = "primes.js",
             monoFile = "primes.cs",
-            dotNetFile = "primes.cs"))
+            dotNetFile = "primes.cs",
+            zigFile = "primes.zig"))
     }
 }

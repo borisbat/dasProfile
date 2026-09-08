@@ -6,7 +6,6 @@ options solid_context
 
 require math
 require daslib/strings
-require testProfile
 
 include ../config.das
 
@@ -118,16 +117,9 @@ def main {
     }
     verify(sha256(input) == "8adcaee60bb05a9964a1df12d2f007adcb8f3fa20ff7d1ecfde0a2ac301ff412")
     print("\t{1.0/dt} mb/sec\n")
-    if (is_cpp_time()) {
-        cpp_label()
-        let cpp_dt = bench("sha256") <| $() {
-            for (i in range(32)) {
-                testProfile::testSha256(input)
-            }
-        }
-        print("\t{1.0/cpp_dt} mb/sec\n")
-        verify(testProfile::testSha256(input) == "8adcaee60bb05a9964a1df12d2f007adcb8f3fa20ff7d1ecfde0a2ac301ff412")
+    if (is_interp_time()) {
         run_files(TestFile(
+            cppFile = "sha256.cpp",
             luauFile = "sha256.luau",
             luaFile = "sha256.lua",
             luaJitFile = "sha256_luajit.lua",
@@ -135,6 +127,7 @@ def main {
             nutModifiedFile = "sha256.nut",
             jsFile = "sha256.js",
             monoFile = "sha256.cs",
-            dotNetFile = "sha256.cs"))
+            dotNetFile = "sha256.cs",
+            zigFile = "sha256.zig"))
     }
 }

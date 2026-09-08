@@ -3,7 +3,6 @@ options _comment_hygiene = true
 // options log=true, log_nodes=true, print_var_access=true, print_ref=true
 
 require math
-require testProfile
 require daslib/only_nttp
 
 include ../config.das
@@ -31,14 +30,9 @@ def main {
         f1 = expLoop(1000000)
     }
     verifyExp(f1)
-    if (is_cpp_time()) {
-        var f4 = 0.
-        cpp_label()
-        bench("exp loop") <| $() {
-            f4 = testProfile::testExpLoop(1000000)
-        }
-        verifyExp(f4)
+    if (is_interp_time()) {
         run_files(TestFile(
+            cppFile = "exp.cpp",
             luauFile = "exp.luau",
             luaFile = "exp.lua",
             luaJitFile = "exp.lua",
@@ -47,6 +41,7 @@ def main {
             // asFile = "exp.as", // TODO: implement
             jsFile = "exp.js",
             monoFile = "exp.cs",
-            dotNetFile = "exp.cs"))
+            dotNetFile = "exp.cs",
+            zigFile = "exp.zig"))
     }
 }

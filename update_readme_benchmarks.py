@@ -4,7 +4,7 @@
 
 Each `profile_results_<platform>.json` becomes a `### <PlatformDisplayName>`
 section with full prelude (CPU, capture path + timestamp, toolchain, runtime
-versions) and the two benchmark tables (Interpreted / AOT or JIT). Sections
+versions), the two benchmark tables (Interpreted / AOT or JIT) and the Startup table. Sections
 are ordered darwin first, then alphabetical by platform key. Platforms missing
 a runtime show `-` in that column; rows with no entries are skipped.
 """
@@ -61,6 +61,7 @@ SECTION_CONFIGS: tuple[SectionConfig, ...] = (
             "DAS AOT",
             "DAS JIT",
             "C++",
+            "ZIG",
             "LUAU --codegen",
             "LUAJIT",
             "MONO",
@@ -70,6 +71,7 @@ SECTION_CONFIGS: tuple[SectionConfig, ...] = (
             "DAS AOT",
             "DAS JIT",
             "C++",
+            "Zig",
             "Luau --codegen",
             "LuaJIT",
             "Mono",
@@ -135,7 +137,11 @@ def build_snapshot(profiles: list[tuple[Path, dict[str, Any]]], readme_path: Pat
              "Per-platform captures. A cell is the median of five samples, each its own process; "
              "a sample runs the kernel as many times as fit a 0.5 s budget and reports the per-run time, "
              "and `±` is half the sample range as a share of the median. Lower is better. "
-             "The fastest result in each row is in bold. `-` means no value for that runtime on that benchmark."]
+             "The fastest result in each row is in bold. `-` means no value for that runtime on that benchmark. "
+             "The Startup table is hello world in every language on the boards: the wall time of one launch "
+             "the way that lane's kernels are launched (median of ten after a warm one), and the size of the "
+             "artifact the lane runs where it built one - a das exe links the daslang runtime library "
+             "dynamically, a zig exe is static."]
 
     for path, data in profiles:
         lines.append("")
@@ -170,7 +176,8 @@ def render_platform_section(path: Path, data: dict[str, Any], readme_path: Path)
             f"{format_runtime_version('mono', optional_string(versions, 'mono'))}, "
             f"{format_runtime_version('dotnet', optional_string(versions, 'dotnet'))}, "
             f"{format_runtime_version('quickjs', optional_string(versions, 'quickjs'))}, "
-            f"{format_runtime_version('quirrel', optional_string(versions, 'quirrel'))}"
+            f"{format_runtime_version('quirrel', optional_string(versions, 'quirrel'))}, "
+            f"{format_runtime_version('zig', optional_string(versions, 'zig'))}"
         ),
     ]
 
@@ -179,6 +186,46 @@ def render_platform_section(path: Path, data: dict[str, Any], readme_path: Path)
         lines.extend(["", f"#### {config.title}", ""])
         lines.extend(render_table(config, section))
 
+    startup = data.get("Startup")
+    if isinstance(startup, dict) and startup:
+        lines.extend(["", "#### Startup", ""])
+        lines.extend(render_startup_table(startup))
+
+    return lines
+
+
+STARTUP_LABELS = {
+    "DAS INTERPRETER": "DAS interpreter", "DAS JIT": "DAS JIT", "DAS EXE": "DAS exe", "C++": "C++",
+    "ZIG": "Zig", "LUAU --codegen": "Luau --codegen", "LUAU": "Luau", "LUA": "Lua",
+    "LUAJIT -joff": "LuaJIT -joff", "LUAJIT": "LuaJIT", "QUIRREL": "Quirrel", "QUICKJS": "QuickJS",
+    "MONO --interpreter": "Mono --interpreter", "MONO": "Mono", ".NET": ".NET",
+}
+
+
+def format_size(size: Any) -> str:
+    if not isinstance(size, (int, float)) or size <= 0:
+        return "-"
+    if size >= 1048576:
+        return f"{size / 1048576:.1f} MB"
+    return f"{round(size / 1024)} KB"
+
+
+def render_startup_table(section: dict[str, Any]) -> list[str]:
+    """One row per runtime: the wall time of one launch of hello world the way that lane's
+    kernels are launched, and the size of the artifact the lane runs where it built one."""
+    lines = [
+        "| Runtime | hello world | artifact |",
+        "| --- | ---: | ---: |",
+    ]
+    for program, row in section.items():
+        entries = validate_row("Startup", program, row)
+        if not entries:
+            continue
+        sizes = {item["language"]: item.get("size") for item in row if isinstance(item, dict)}
+        best_time = min(entry["time"] for entry in entries.values())
+        for language in [item["language"] for item in row if isinstance(item, dict)]:
+            label = STARTUP_LABELS.get(language, language)
+            lines.append(f"| {label} | {format_cell(entries.get(language), best_time)} | {format_size(sizes.get(language))} |")
     return lines
 
 
@@ -286,7 +333,8 @@ def format_runtime_version(name: str, text: str) -> str:
         # Missing runtime renders as "<Display> -" so the reader can see we
         # tried to detect it (vs. it being plain omitted).
         labels = {"lua": "Lua", "luajit": "LuaJIT", "luau": "Luau",
-                  "mono": "Mono", "dotnet": ".NET", "quickjs": "QuickJS", "quirrel": "Quirrel"}
+                  "mono": "Mono", "dotnet": ".NET", "quickjs": "QuickJS", "quirrel": "Quirrel",
+                  "zig": "Zig"}
         return f"{labels.get(name, name)} -"
     line = short_version(text)
     if name == "lua":
@@ -314,6 +362,8 @@ def format_runtime_version(name: str, text: str) -> str:
         return f"QuickJS {line}"
     if name == "quirrel":
         return f"Quirrel {line.split(' Copyright', 1)[0]}"
+    if name == "zig":
+        return f"Zig {line}"
     return line
 
 

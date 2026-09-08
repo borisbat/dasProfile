@@ -397,6 +397,32 @@ set_target_properties(profileAddOne PROPERTIES
     POSITION_INDEPENDENT_CODE ON
 )
 
+# The C++ lane: one program per test under tests/cpp, the shared harness in profile.h, built at
+# the configuration's default optimization (Release: -O3, MSVC /O2, what the kernels had as a
+# module) and staged into the runtime root beside the other lanes' hosts; hello is the startup row.
+# native links addOne.c as its own object, so every AddOne is a call across the C ABI.
+set(PROFILE_CPP_PROGRAMS hello dict exp f2i f2s fib_loop fib_recursive mandelbrot native nbodies particles primes queen sha256 spectral-norm table-sort tree)
+add_custom_target(stageProfileCpp ALL
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROFILE_EXAMPLES_DIR}/tests/cpp"
+    COMMENT "Staging the C++ lane programs into SDK examples/profile/tests/cpp"
+)
+foreach(prog ${PROFILE_CPP_PROGRAMS})
+    string(REPLACE "-" "_" prog_id "${prog}")
+    set(prog_sources ${CMAKE_CURRENT_SOURCE_DIR}/tests/cpp/${prog}.cpp)
+    if (prog STREQUAL "native")
+        list(APPEND prog_sources ${CMAKE_CURRENT_SOURCE_DIR}/tests/cs/addOne/addOne.c)
+    endif()
+    add_executable(profileCpp_${prog_id} ${prog_sources})
+    target_compile_features(profileCpp_${prog_id} PRIVATE cxx_std_17)
+    set_target_properties(profileCpp_${prog_id} PROPERTIES OUTPUT_NAME ${prog})
+    add_custom_command(TARGET stageProfileCpp POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "$<TARGET_FILE:profileCpp_${prog_id}>"
+            "${PROFILE_EXAMPLES_DIR}/tests/cpp/$<TARGET_FILE_NAME:profileCpp_${prog_id}>"
+    )
+    add_dependencies(stageProfileCpp profileCpp_${prog_id})
+endforeach()
+
 add_custom_target(stageProfileAddOne ALL
     COMMAND ${CMAKE_COMMAND} -E make_directory "${PROFILE_EXAMPLES_DIR}/tests/cs"
     COMMAND ${CMAKE_COMMAND} -E make_directory "${PROFILE_EXAMPLES_DIR}/tests/lua"
@@ -487,7 +513,7 @@ add_custom_target(sync_profile_examples ALL
     COMMENT "Syncing profile scripts to SDK examples/profile"
 )
 
-add_dependencies(sync_profile_examples testProfile sync_profile_descriptor profileLuaCli stageProfileLuau stageProfileLuajit stageProfileQuirrel stageProfileQuickJs stageProfileAddOne)
+add_dependencies(sync_profile_examples testProfile sync_profile_descriptor profileLuaCli stageProfileLuau stageProfileLuajit stageProfileQuirrel stageProfileQuickJs stageProfileAddOne stageProfileCpp)
 
 add_custom_target(run_profile
     COMMAND $<TARGET_FILE:DAS::daslang> "${PROFILE_EXAMPLES_DIR}/main.das"

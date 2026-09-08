@@ -2,7 +2,6 @@ options gen2
 options _comment_hygiene = true
 // options log=true, print_var_access=true, print_ref=true
 
-require testProfile
 require daslib/only_nttp
 
 include ../config.das
@@ -40,14 +39,9 @@ def main {
         f1 = f2i(nums)
     }
     assert(f1 == summ)
-    if (is_cpp_time()) {
-        cpp_label()
-        var f4 = 0.0
-        bench("string2float") <| $() {
-            f4 = test_f2i(nums, TOTAL_NUMBERS, TOTAL_TIMES)
-        }
-        assert(f4 == summ)
+    if (is_interp_time()) {
         run_files(TestFile(
+            cppFile = "f2i.cpp",
             luauFile = "f2i.luau",
             luaFile = "f2i.lua",
             luaJitFile = "f2i.lua",
@@ -56,7 +50,8 @@ def main {
             // asFile = "f2i.as",
             jsFile = "f2i.js",
             monoFile = "f2i.cs", // this one - interpreter goes bonkers
-            dotNetFile = "f2i.cs"))
+            dotNetFile = "f2i.cs",
+            zigFile = "f2i.zig"))
     }
 }
 

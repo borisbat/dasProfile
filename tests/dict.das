@@ -7,7 +7,6 @@ require math
 // enable for test purposes only. this is slower
 // options intern_strings = true
 
-require testProfile
 include ../config.das
 
 def makeRandomSequence(var src : array<string>) {
@@ -37,12 +36,9 @@ def main {
     bench("dictionary") <| $() {
         dict(tab, src)
     }
-    if (is_cpp_time()) {
-        cpp_label()
-        bench("dictionary") <| $() {
-            testProfile::testDict(src)
-        }
+    if (is_interp_time()) {
         run_files(TestFile(
+            cppFile = "dict.cpp",
             luauFile = "dict.luau",
             luaFile = "dict.lua",
             luaJitFile = "dict.lua",
@@ -51,6 +47,7 @@ def main {
             // asFile = "dict.as",  // TODO: update AS to new version?
             jsFile = "dict.js",
             monoFile = "dict.cs",
-            dotNetFile = "dict.cs"))
+            dotNetFile = "dict.cs",
+            zigFile = "dict.zig"))
     }
 }

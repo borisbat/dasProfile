@@ -4,7 +4,6 @@ options _comment_hygiene = true
 // options logCpp = true
 // options log_nodes=true
 
-require testProfile
 
 include ../config.das
 
@@ -44,12 +43,9 @@ def main {
     bench("particles kinematics") <| $() {
         testSim2I(objects, 10)
     }
-    if (is_cpp_time()) {
-        cpp_label()
-        bench("particles kinematics") <| $() {
-            testProfile::testParticlesI(10)
-        }
+    if (is_interp_time()) {
         run_files(TestFile(
+            cppFile = "particles.cpp",
             luauFile = "particles.luau",
             luaFile = "particles.lua",
             luaJitFile = "particles.lua",
@@ -58,6 +54,7 @@ def main {
             asFile = "particles.as",
             jsFile = "particles.js",
             monoFile = "particles.cs",
-            dotNetFile = "particles.cs"))
+            dotNetFile = "particles.cs",
+            zigFile = "particles.zig"))
     }
 }

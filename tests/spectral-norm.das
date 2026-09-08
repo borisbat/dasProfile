@@ -2,7 +2,6 @@ options gen2
 options _comment_hygiene = true
 // options log=true, print_var_access=true, print_ref=true
 
-require testProfile
 require daslib/only_nttp
 
 options stack = 1_000_000
@@ -75,12 +74,9 @@ def main {
         f1 = test()
     }
     assert(abs(f1 - ref) < 1e-5lf, "spectral norm")
-    if (is_cpp_time()) {
-        cpp_label()
-        bench("spectral norm") <| $() {
-            testSnorm()
-        }
+    if (is_interp_time()) {
         run_files(TestFile(
+            cppFile = "spectral-norm.cpp",
             luaFile = "spectral-norm.lua",
             luauFile = "spectral-norm.luau",
             luaJitFile = "spectral-norm.lua",
@@ -88,6 +84,7 @@ def main {
             nutFile = "spectral-norm.nut",
             nutModifiedFile = "spectral-norm.nut",
             dotNetFile = "spectral-norm.cs",
+            zigFile = "spectral-norm.zig",
             jsFile = "spectral-norm.js"))
     }
 }
