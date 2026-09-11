@@ -80,9 +80,15 @@ def quickjs_executable(js_root : string) {
 }
 
 [no_jit, no_aot]
+//! the macOS pkg, the dotnet-install.sh user-local tree, the distro package - in that order -
+//! before trusting PATH: a capture launched from a non-login shell sees none of them on PATH,
+//! and a bare `dotnet` that is not found loses the .NET lane without a word
 def dotnet_executable() : string {
-    let dotnetPath = "/usr/local/share/dotnet/dotnet"
-    return get_platform_name() == "windows" ? "dotnet" : (stat(dotnetPath).is_valid ? dotnetPath : "dotnet")
+    if (get_platform_name() == "windows") return "dotnet"
+    for (candidate in ["/usr/local/share/dotnet/dotnet", path_join(get_env_variable("HOME"), ".dotnet/dotnet"), "/usr/share/dotnet/dotnet", "/usr/lib/dotnet/dotnet"]) {
+        if (stat(candidate).is_valid) return candidate
+    }
+    return "dotnet"
 }
 
 [no_jit, no_aot]
