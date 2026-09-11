@@ -515,12 +515,14 @@ add_custom_target(sync_profile_examples ALL
 
 add_dependencies(sync_profile_examples testProfile sync_profile_descriptor profileLuaCli stageProfileLuau stageProfileLuajit stageProfileQuirrel stageProfileQuickJs stageProfileAddOne stageProfileCpp)
 
-# The one way to capture a record: the runner jitted (the JIT lane is emitted only then) and
-# every C++ module loaded on start (the AOT lane lives on testProfileAot's dlopen, which a
-# descriptor manifest defers); the record lands in the source root, where the README
-# generator and the site fetch read it. The runner exits 1 on any missing das lane.
+# The one way to capture a record: the runner jitted (the JIT lane is emitted only then); the
+# runner gives its child -ignore-manifest itself (the AOT lane lives on testProfileAot's dlopen,
+# which a descriptor manifest defers) and must not carry the flag here - a parent that loaded
+# every C++ module on start is a fat process, and every startup launch it times pays the fork
+# of that address space. The record lands in the source root, where the README generator and
+# the site fetch read it. The runner exits 1 on any missing das lane.
 add_custom_target(run_profile
-    COMMAND $<TARGET_FILE:DAS::daslang> -jit -ignore-manifest "${CMAKE_CURRENT_SOURCE_DIR}/main.das" -- --json
+    COMMAND $<TARGET_FILE:DAS::daslang> -jit "${CMAKE_CURRENT_SOURCE_DIR}/main.das" -- --json
     DEPENDS testProfile sync_profile_examples
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
     USES_TERMINAL

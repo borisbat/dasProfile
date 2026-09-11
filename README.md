@@ -156,12 +156,13 @@ One command, from the repository root, on an idle box:
 cmake --build build --target run_profile
 ```
 
-It runs `daslang -jit -ignore-manifest main.das -- --json`: the runner jitted, because the JIT
-lane is emitted only then, and every C++ module loaded on start, because the AOT lane lives on
-the dlopen of `testProfileAot.shared_module`, which a descriptor manifest would defer and
-nothing requires. The runner injects `-ignore-manifest` into its child whatever it was given,
-refuses `--json` without `-jit`, and on any das lane missing from any test - or any lane
-failure - names the holes, writes no record and exits 1. `profile_results_<platform>.json`
+It runs `daslang -jit main.das -- --json`: the runner jitted, because the JIT lane is emitted
+only then. The runner starts the child that runs the boards with `-ignore-manifest`, because
+the AOT lane lives on the dlopen of `testProfileAot.shared_module`, which a descriptor manifest
+would defer and nothing requires; the parent itself must stay without that flag, since it times
+the startup launches and a parent that loaded every C++ module pays the fork of a fat address
+space on each. The runner refuses `--json` without `-jit`, and on any das lane missing from any
+test - or any lane failure - names the holes, writes no record and exits 1. `profile_results_<platform>.json`
 lands beside this file; `update_readme_benchmarks.py` renders the tables above from it, and
 daslang.io fetches it on deploy and fails the deploy on the same holes.
 
