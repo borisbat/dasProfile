@@ -148,6 +148,23 @@ Platform information:
 | Mono | 0.011019s ±4% | 3 KB |
 | .NET | 0.019758s ±2% | 4 KB |
 
+## Capturing a record
+
+One command, from the repository root, on an idle box:
+
+```
+cmake --build build --target run_profile
+```
+
+It runs `daslang -jit -ignore-manifest main.das -- --json`: the runner jitted, because the JIT
+lane is emitted only then, and every C++ module loaded on start, because the AOT lane lives on
+the dlopen of `testProfileAot.shared_module`, which a descriptor manifest would defer and
+nothing requires. The runner injects `-ignore-manifest` into its child whatever it was given,
+refuses `--json` without `-jit`, and on any das lane missing from any test - or any lane
+failure - names the holes, writes no record and exits 1. `profile_results_<platform>.json`
+lands beside this file; `update_readme_benchmarks.py` renders the tables above from it, and
+daslang.io fetches it on deploy and fails the deploy on the same holes.
+
 ## Related
 
 - [daslang](https://github.com/GaijinEntertainment/daScript) — the daslang compiler and runtime

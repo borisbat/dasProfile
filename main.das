@@ -502,6 +502,7 @@ def make_entries {
     var parts : array<string>
     var hasJit = false
     var hasNoCache = false
+    var hasIgnoreManifest = false
     for (arg in get_command_line_arguments()) {
         if (arg == "--") break
         if (arg == "-jit") {
@@ -509,6 +510,9 @@ def make_entries {
         }
         if (arg == "-jit-no-cache") {
             hasNoCache = true
+        }
+        if (arg == "-ignore-manifest") {
+            hasIgnoreManifest = true
         }
         let isAbsolute = starts_with(arg, "/") || starts_with(arg, "\\") || (arg |> slice(1, 2)) == ":"
         if (ends_with(arg, ".das") && !starts_with(arg, "-") && !isAbsolute) {
@@ -522,6 +526,12 @@ def make_entries {
     // emitted code, so ASLR rebasing makes a cache-hit DLL crash when loaded back.
     if (hasJit && !hasNoCache && get_platform_name() == "windows") {
         parts |> push("-jit-no-cache")
+    }
+    //! the AOT lane lives on testProfileAot's dlopen side effect, which a descriptor manifest
+    //! defers and nothing requires - has_module is a guard, not a load - so the child that
+    //! compiles the AOT lane always loads every module on start, whatever the parent was given
+    if (!hasIgnoreManifest && length(parts) > 1) {
+        parts |> push("-ignore-manifest", 1)
     }
     if (empty(parts)) {
         print("Error: empty command line\n")
@@ -946,6 +956,10 @@ def main : int {
     print("{get_command_line_arguments()}\n\n")
 
     if (args.json) {
+        if (!jit_enabled()) {
+            print("CAPTURE FAILED: the JIT lane needs the runner itself jitted - start it as `daslang -jit main.das -- --json`\n")
+            return 1
+        }
         return make_json_output(cpuName, versionInfo)
     }
     if (args.startup) {
