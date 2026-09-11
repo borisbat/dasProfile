@@ -21,6 +21,7 @@ var PROFILE_MODULES_REGISTERED = false
 
 
 var failed = 0
+var subprocess_failed = false   //! the --json re-invocation exited non-zero: its own lanes failed
 
 //! the source tree the runner was started in, when it holds the suite; the runner's own file
 //! resolves to the binary's directory when it is named by a relative path, which is not the tree
@@ -186,19 +187,19 @@ def samples_per_lane {
 def test_single_file(fileName : string) {
     let samples = samples_per_lane()
     if (ENABLE_AOT) {
-        for (i in range(samples)) {
+        for (_ in range(samples)) {
             print("\"DAS AOT\", ")
             compile_and_run(fileName, true, false)
         }
     }
     if (ENABLE_JIT && jit_enabled()) {
-        for (i in range(samples)) {
+        for (_ in range(samples)) {
             print("\"DAS JIT\", ")
             run_jit_child(fileName)
         }
     }
     if (ENABLE_INTERPRETER) {
-        for (i in range(samples)) {
+        for (_ in range(samples)) {
             print("\"DAS INTERPRETER\", ")
             compile_and_run(fileName, false, false)
         }
@@ -281,7 +282,7 @@ def private strip_core_count_suffix(s : string) : string {
         peek_data(s) $(arr) {
             var i = p - 1
             while (i >= 0 && int(arr[i]) >= int(0x30) /* '0' */ && int(arr[i]) <= int(0x39) /* '9' */) {
-                i -= 1
+                i --
             }
             if (i >= 0 && int(arr[i]) == int(0x20) /* space */) {
                 cut = i
@@ -554,7 +555,8 @@ def make_entries {
             }
         }
         if (exitCode != 0) {
-            print("Warning: subprocess exited with code {exitCode}\n")
+            print("subprocess exited with code {exitCode}\n")
+            subprocess_failed = true
         }
     }
     return <- entries
@@ -790,7 +792,75 @@ def print_environment_summary(cpu_name : string; version_info : VersionInfo) {
     print("\n")
 }
 
-def make_json_output(cpu_name : string; version_info : VersionInfo) {
+//! the das lanes a record must carry on every test, per board; a lane the capture lost (an AOT
+//! module that never loaded, a runner started without -jit, a child that died) is a failed
+//! capture, never a record with a hole - the site renders whatever arrives and drops the rest
+let private DAS_INTERPRETED_LANES <- ["DAS INTERPRETER"]
+let private DAS_AOT_JIT_LANES <- ["DAS AOT", "DAS JIT"]
+let private DAS_STARTUP_LANES <- ["DAS INTERPRETER", "DAS JIT", "DAS EXE"]
+
+def private has_lane(rows : array<ResultEntry>; lane : string; samples : int) : bool {
+    for (r in rows) {
+        if (r.language == lane) {
+            return length(r.samples) == samples
+        }
+    }
+    return false
+}
+
+def private has_startup_lane(rows : array<StartupEntry>; lane : string) : bool {
+    for (r in rows) {
+        if (r.language == lane && r.count > 0) return true
+    }
+    return false
+}
+
+def private board_holes(board : string; rows_by_test : table<string; array<ResultEntry>>; lanes : array<string>; expected, samples : int) : array<string> {
+    var holes : array<string>
+    if (length(rows_by_test) != expected) {
+        holes |> push("{board}: {length(rows_by_test)} tests on the board, {expected} test files in the suite")
+    }
+    for (test, rows in keys(rows_by_test), values(rows_by_test)) {
+        for (lane in lanes) {
+            if (!has_lane(rows, lane, samples)) {
+                holes |> push("{board} / {test}: no {lane} cell with {samples} samples")
+            }
+        }
+    }
+    return <- holes
+}
+
+//! every test file of the suite must sit on both boards with every das lane at the sample
+//! count the run was asked for, and the startup row must carry the three das launches;
+//! the report names each hole and the capture fails on any
+def private missing_das_lanes(report : Report) : array<string> {
+    let samples = samples_per_lane()
+    var expected = 0
+    dir(tests_dir()) $(fileName) {
+        if ((!fileName |> starts_with("_")) && fileName |> ends_with(".das")) {
+            expected ++
+        }
+    }
+    var holes <- board_holes("Interpreted", report.interpreted, DAS_INTERPRETED_LANES, expected, samples)
+    holes |> push_from(board_holes("AOT or JIT", report.aot_or_jit, DAS_AOT_JIT_LANES, expected, samples))
+    var startupSeen = false
+    for (row, rows in keys(report.startup), values(report.startup)) {
+        continue if (row != "hello world")
+        startupSeen = true
+        for (lane in DAS_STARTUP_LANES) {
+            if (!has_startup_lane(rows, lane)) {
+                holes |> push("Startup / hello world: no {lane} launches")
+            }
+        }
+    }
+    if (!startupSeen) {
+        holes |> push("Startup: no hello world row")
+    }
+    return <- holes
+}
+
+//! the capture's exit code: 0 with the record written, 1 with the holes named and no record
+def make_json_output(cpu_name : string; version_info : VersionInfo) : int {
     let entries <- make_entries()
 
     let interpreted_languages : table<string> <- {
@@ -822,6 +892,15 @@ def make_json_output(cpu_name : string; version_info : VersionInfo) {
         aot_or_jit  <- collect(aot_jit_languages, entries),
         startup     <- collect_startup())
 
+    let holes <- missing_das_lanes(report)
+    if (!empty(holes) || failed != 0 || subprocess_failed) {
+        print("CAPTURE FAILED: no record written\n")
+        for (h in holes) {
+            print("  {h}\n")
+        }
+        print("  runner failures: {failed}, subprocess exit non-zero: {subprocess_failed}\n") if (failed != 0 || subprocess_failed)
+        return 1
+    }
     // Platform-suffixed so captures from several machines coexist; the README
     // generator (update_readme_benchmarks.py) globs them for per-platform
     // sections, and daslang.io's playground cycler fetches them by suffix.
@@ -832,23 +911,25 @@ def make_json_output(cpu_name : string; version_info : VersionInfo) {
         }
     }
     print("JSON output written to {output_file}\n")
+    return 0
 }
 
+//! the process exit code: 1 on any lane failure, so a --json parent and a shell both see it
 [export]
-def main {
+def main : int {
     install_log_filter()
 
     var parsed <- parse_args(type<ProfileArgs>)
     if (parsed |> is_err) {
         print("error: {parsed |> unwrap_err}\n\n")
         print_help(get_command_info(type<ProfileArgs>), "profile_tests")
-        return
+        return 1
     }
 
     let args <- parsed |> move_unwrap
     if (args.help) {
         print_help(get_command_info(type<ProfileArgs>), "profile_tests")
-        return
+        return 0
     }
 
     if (args.dasonly) {
@@ -865,12 +946,11 @@ def main {
     print("{get_command_line_arguments()}\n\n")
 
     if (args.json) {
-        make_json_output(cpuName, versionInfo)
-        return
+        return make_json_output(cpuName, versionInfo)
     }
     if (args.startup) {
         print_startup(collect_startup())
-        return
+        return failed != 0 ? 1 : 0
     }
     if (args.log) {
         LOG_TEST_COMPILATION_TIME = true
@@ -879,14 +959,14 @@ def main {
     if (!empty(singleTest)) {
         let dir = tests_dir()
         test_single_file("{dir}/{singleTest}.das")
-        return
-    }
-    if (mainTests) {
+    } elif (mainTests) {
         run_dir(tests_dir())
     }
     if (failed != 0) {
         print("TOTAL FAILURES: {failed}\n")
+        return 1
     }
+    return 0
 }
 
 
