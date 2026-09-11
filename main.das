@@ -192,7 +192,7 @@ def test_single_file(fileName : string) {
             compile_and_run(fileName, true, false)
         }
     }
-    if (ENABLE_JIT && jit_enabled()) {
+    if (ENABLE_JIT) {   //! the lane's children start under -jit themselves; the runner's own tier is no gate
         for (_ in range(samples)) {
             print("\"DAS JIT\", ")
             run_jit_child(fileName)
@@ -962,8 +962,10 @@ def main : int {
     print("{get_command_line_arguments()}\n\n")
 
     if (args.json) {
-        if (!jit_enabled()) {
-            print("CAPTURE FAILED: the JIT lane needs the runner itself jitted - start it as `daslang -jit main.das -- --json`\n")
+        //! the parent times every startup launch, and a jitted parent maps LLVM and its DLL and pays
+        //! that address space on each fork - measured 5 ms on every lane of the M1 Max table
+        if (jit_enabled()) {
+            print("CAPTURE FAILED: the runner must not be jitted, it times the startup launches - start it as `daslang main.das -- --json`\n")
             return 1
         }
         return make_json_output(cpuName, versionInfo)
